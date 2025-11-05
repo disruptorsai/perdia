@@ -455,24 +455,31 @@ git push origin feature/my-feature
 
 ## Deployment
 
+### Netlify Project Information
+
+**This repository is already connected to Netlify:**
+- **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
+- **Account:** Perdia Education (New Netlify Account)
+- **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
+- **Status:** ✅ Connected and Auto-Deploy Enabled
+
 ### Deploy to Netlify
 
-#### One-Time Setup
+#### Initial Setup (Already Complete)
 
-1. **Connect Repository**
-   - Go to: https://app.netlify.com/
-   - Click: **Add new site** → **Import an existing project**
-   - Choose: **GitHub**
-   - Select repository: `perdia-education`
+1. ✅ **Repository Connected**
+   - GitHub repository already linked to Netlify
+   - Project ID: `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 
-2. **Configure Build Settings**
+2. ✅ **Build Settings Configured**
    - **Build command:** `npm run build`
    - **Publish directory:** `dist`
    - **Functions directory:** `netlify/functions` (optional)
+   - **Node version:** 18 (defined in netlify.toml)
 
-3. **Add Environment Variables**
-   - Go to: **Site settings** → **Environment variables**
-   - Click: **Add a variable**
+3. **Add/Update Environment Variables**
+   - Go to: [Environment Variables Settings](https://app.netlify.com/sites/perdia-education/configuration/env)
+   - Click: **Add a variable** or **Edit**
    - Add all variables from `.env.local`:
      - `VITE_SUPABASE_URL`
      - `VITE_SUPABASE_ANON_KEY`
@@ -481,16 +488,49 @@ git push origin feature/my-feature
      - (DO NOT add `SERVICE_ROLE_KEY` unless needed for functions)
 
 4. **Deploy!**
-   - Click: **Deploy site**
+   - Push to `main` branch → automatic deployment
+   - Or manually trigger: **Deploys** → **Trigger deploy** → **Deploy site**
    - Wait 2-3 minutes for build
    - Access your live site!
 
 #### Automatic Deploys
 
 **After setup:**
-- ✅ Push to `master` branch → Auto-deploy to production
+- ✅ Push to `main` branch → Auto-deploy to production
 - ✅ Create pull request → Auto-deploy preview
 - ✅ Every commit triggers a build
+
+#### Using Netlify CLI
+
+Install and use the Netlify CLI for advanced operations:
+
+```bash
+# Install Netlify CLI globally
+npm install -g netlify-cli
+
+# Link to existing Netlify site (use project ID)
+netlify link
+
+# Deploy to production
+netlify deploy --prod
+
+# List environment variables
+netlify env:list
+
+# Set environment variable
+netlify env:set VARIABLE_NAME value
+
+# Open deployed site in browser
+netlify open:site
+
+# Open Netlify dashboard
+netlify open:admin
+
+# View deployment logs
+netlify watch
+```
+
+**Project ID for linking:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 
 #### Custom Domain
 
@@ -700,5 +740,6 @@ Before going live:
 ---
 
 **Version:** 1.0
-**Last Updated:** 2025-11-04
+**Last Updated:** 2025-11-05
+**Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
 **Author:** Disruptors Media Development Team

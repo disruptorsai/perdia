@@ -664,30 +664,50 @@ try {
 
 ## 🚀 Deployment Patterns
 
+### Netlify Project Information
+
+**Current Deployment:**
+- **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
+- **Account:** Perdia Education (New Netlify Account)
+- **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
+- **Status:** ✅ Connected and Auto-Deploy Enabled
+
 ### Environment Variables
 
-**Required:**
+**Required for Netlify:**
 ```bash
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_SUPABASE_SERVICE_ROLE_KEY=
-VITE_ANTHROPIC_API_KEY=
-VITE_OPENAI_API_KEY=
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_ANTHROPIC_API_KEY=sk-ant-your-key
+VITE_OPENAI_API_KEY=sk-your-key
 ```
 
 **Optional:**
 ```bash
-VITE_CLOUDINARY_CLOUD_NAME=
-VITE_CLOUDINARY_API_KEY=
+VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Only for serverless functions
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+VITE_CLOUDINARY_API_KEY=your_api_key
 ```
+
+**Set in Netlify Dashboard:**
+- URL: https://app.netlify.com/sites/perdia-education/configuration/env
+- Navigate to: Site settings → Environment variables
+- Add each variable individually
 
 ### Netlify Configuration
 
 ```toml
 # netlify.toml
+# Project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
+
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
 
 [[redirects]]
   from = "/*"
@@ -700,6 +720,27 @@ VITE_CLOUDINARY_API_KEY=
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+```
+
+### Netlify CLI Usage
+
+```bash
+# Install Netlify CLI
+npm install -g netlify-cli
+
+# Link to project
+netlify link  # Use project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
+
+# Deploy to production
+netlify deploy --prod
+
+# Manage environment variables
+netlify env:list
+netlify env:set VARIABLE_NAME value
+
+# Open site/dashboard
+netlify open:site
+netlify open:admin
 ```
 
 ---
@@ -795,5 +836,6 @@ Create a [component name] component following Perdia patterns:
 
 ---
 
-**Last Updated:** 2025-11-04
+**Last Updated:** 2025-11-05
 **Version:** 1.0.0
+**Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4

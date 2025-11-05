@@ -2,6 +2,10 @@
 # PERDIA EDUCATION - NETLIFY CONFIGURATION
 # ============================================================================
 # This file configures Netlify deployment for the Perdia Education platform
+#
+# Project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
+# Account: Perdia Education (New Netlify Account)
+# Last Updated: 2025-11-05
 # ============================================================================
 
 [build]
@@ -127,6 +131,11 @@
 # NOTES
 # ============================================================================
 #
+# PROJECT INFORMATION:
+# - Project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
+# - Account: Perdia Education (New Netlify Account)
+# - Dashboard: https://app.netlify.com/sites/perdia-education/overview
+#
 # DEPLOYMENT STEPS:
 #
 # 1. Connect GitHub repository to Netlify
@@ -135,7 +144,7 @@
 # 4. Deploy!
 #
 # AUTOMATIC DEPLOYS:
-# - Pushes to master branch trigger production deploys
+# - Pushes to main branch trigger production deploys
 # - Pull requests create deploy previews
 #
 # CUSTOM DOMAIN:
@@ -147,5 +156,11 @@
 # - Create functions in netlify/functions/
 # - Access at: /.netlify/functions/function-name
 # - Use for server-side operations (e.g., WordPress publishing)
+#
+# NETLIFY CLI COMMANDS:
+# - netlify deploy --prod                    # Deploy to production
+# - netlify env:list                         # List environment variables
+# - netlify open:site                        # Open deployed site
+# - netlify open:admin                       # Open Netlify dashboard
 #
 # ============================================================================

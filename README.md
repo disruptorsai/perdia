@@ -169,16 +169,36 @@ npm run setup        # Complete setup (install + migrate + seed)
 
 ## 🚢 Deployment
 
+### Netlify Project Information
+
+- **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
+- **Account:** Perdia Education (New Netlify Account)
+- **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
+- **Status:** ✅ Repository Connected
+
 ### Deploy to Netlify
 
-1. Connect GitHub repository to Netlify
-2. Configure build settings:
+1. ✅ Repository already connected to Netlify
+2. Configure build settings (automated via [netlify.toml](netlify.toml)):
    - **Build command:** `npm run build`
    - **Publish directory:** `dist`
-3. Add environment variables in Netlify dashboard
-4. Deploy!
+   - **Node version:** 18
+3. Set environment variables in [Netlify dashboard](https://app.netlify.com/sites/perdia-education/configuration/env):
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_ANTHROPIC_API_KEY`
+   - `VITE_OPENAI_API_KEY`
+4. Push to `main` branch → auto-deploy!
 
-See [netlify.toml](netlify.toml) for configuration.
+**Netlify CLI Commands:**
+```bash
+netlify deploy --prod        # Deploy to production
+netlify env:list             # List environment variables
+netlify open:site            # Open deployed site
+netlify open:admin           # Open Netlify dashboard
+```
+
+See [netlify.toml](netlify.toml) for complete configuration.
 
 ---
 
@@ -206,5 +226,6 @@ See [Migration Complete Report](docs/PERDIA_MIGRATION_COMPLETE.md) for full deta
 ---
 
 **Version:** 1.0.0
-**Last Updated:** 2025-11-04
+**Last Updated:** 2025-11-05
 **Status:** ✅ Production Ready
+**Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4

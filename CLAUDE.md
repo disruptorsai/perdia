@@ -27,6 +27,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Components:** Radix UI, Recharts, Framer Motion
 - **Routing:** React Router v7
 
+## Project-Specific Agents
+
+This project includes a **specialized Supabase Database Agent** that automatically assists with all database operations.
+
+**Perdia Supabase Database Agent** - Automatically activates when:
+- Database keywords detected (database, supabase, table, schema, migration, etc.)
+- Storage operations mentioned (bucket, upload, file storage)
+- Auth operations needed (authentication, RLS, policies)
+- Performance issues reported (slow query, optimize, index)
+- Database errors encountered (403, permission denied, query failed)
+
+**What it knows:**
+- Complete Perdia schema (16 tables, 4 storage buckets)
+- Base44-compatible SDK architecture
+- RLS policy patterns
+- Migration procedures
+- Performance optimization strategies
+- All Supabase capabilities
+
+**What it does:**
+- Creates tables following project patterns
+- Adds/modifies indexes for performance
+- Manages RLS policies
+- Integrates with SDK automatically
+- Suggests Supabase features proactively
+- Maintains documentation
+- Uses Supabase MCP server automatically
+
+**Documentation:**
+- Full Spec: `.claude/agents/perdia-supabase-database-agent.md`
+- Quick Reference: `docs/SUPABASE_AGENT_QUICK_REFERENCE.md`
+
+**Example Usage:**
+```
+"Add a table for tracking user subscriptions"
+"Why is this query slow?"
+"Set up storage for PDF uploads"
+"Optimize the keywords query"
+```
+
+The agent will automatically provide complete migrations, SDK updates, and documentation.
+
 ## Essential Commands
 
 ### Development
@@ -463,6 +505,11 @@ await ContentQueue.update(draft.id, {
 
 **Location:** `netlify.toml`
 
+**Project Information:**
+- **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
+- **Account:** Perdia Education (New Netlify Account)
+- **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
+
 **Build Settings:**
 - Build command: `npm run build`
 - Publish directory: `dist`
@@ -472,10 +519,18 @@ await ContentQueue.update(draft.id, {
 Set all `VITE_*` variables in Netlify dashboard (same as `.env.local`).
 
 **Deployment Process:**
-1. Connect GitHub repo to Netlify
+1. Repository already connected to Netlify (Project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4)
 2. Configure build settings (or use netlify.toml)
-3. Set environment variables
-4. Push to master branch → auto-deploy
+3. Set environment variables in Netlify dashboard
+4. Push to main branch → auto-deploy
+
+**Netlify CLI:**
+```bash
+netlify deploy --prod        # Deploy to production
+netlify env:list             # List environment variables
+netlify open:site            # Open deployed site
+netlify open:admin           # Open Netlify dashboard
+```
 
 ## Common Pitfalls
 
@@ -572,6 +627,7 @@ VITE_DEBUG=true npm run dev
 
 ---
 
-**Last Updated:** 2025-11-04
+**Last Updated:** 2025-11-05
 **Version:** 1.0.0
 **Status:** ✅ Post-Migration - SDK Layer Complete, Ready for UI Development
+**Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
