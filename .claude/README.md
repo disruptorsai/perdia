@@ -52,10 +52,48 @@ gh auth status
 - Both accounts must be authenticated: `gh auth login`
 - Use `gh auth switch` to manually switch between accounts
 
+## MCP Server Configuration
+
+This repository uses **project-specific MCP (Model Context Protocol) servers** to ensure Claude Code connects to the correct services for the Perdia project.
+
+### Perdia Project Services
+
+- **Supabase Project:** `yvvtsfgryweqfppilkvo` (Perdia Education database)
+- **Netlify Site:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4` (perdia-education)
+- **Cloudinary:** Media optimization for Perdia
+- **DataForSEO:** Keyword research and SEO data
+
+### Setup Instructions
+
+1. Copy the example MCP configuration:
+   ```bash
+   cp .claude/mcp.json.example .claude/mcp.json
+   ```
+
+2. Edit `.claude/mcp.json` and replace placeholder values with your actual tokens:
+   - `SUPABASE_ACCESS_TOKEN` - Get from https://supabase.com/dashboard/account/tokens
+   - `NETLIFY_AUTH_TOKEN` - Get from https://app.netlify.com/user/applications#personal-access-tokens
+   - `CLOUDINARY_*` - Get from Cloudinary dashboard
+   - `DATAFORSEO_*` - Get from DataForSEO account
+
+3. The MCP configuration is **gitignored** to protect your credentials.
+
+### Why Project-Specific MCP?
+
+The global MCP config (`~/.claude/mcp.json`) might point to different Supabase/Netlify projects. This project-specific config ensures that when working on Perdia, Claude Code always connects to the correct Perdia Education services.
+
+### Available MCP Servers for Perdia
+
+- **supabase** - Direct database access, schema inspection, query testing
+- **netlify** - Deployment management, build logs, environment variables
+- **cloudinary** - Image optimization and media management
+- **dataforseo** - Keyword research, competitor analysis, SEO metrics
+
 ## Files in This Directory
 
 - **`settings.json`** - Shared team settings (committed to git)
 - **`settings.local.json`** - Personal overrides (gitignored, not committed)
-- **`CLAUDE.md`** - Project memory and instructions (if present)
-- **`agents/`** - Custom agent definitions (if present)
+- **`mcp.json`** - Project-specific MCP servers (gitignored, not committed)
+- **`mcp.json.example`** - Example MCP configuration template (committed to git)
+- **`agents/`** - Custom agent definitions (perdia-supabase-database-agent)
 - **`commands/`** - Project-specific slash commands (if present)

@@ -74,9 +74,9 @@ export default function DashboardPage() {
     const loadStats = async () => {
       try {
         const [keywords, queue, metrics] = await Promise.all([
-          Keyword.filter({ status: 'queued' }),
-          ContentQueue.filter({ status: 'pending_review' }),
-          PerformanceMetric.list('-metric_date', 30)
+          Keyword.find({ status: 'queued' }),
+          ContentQueue.find({ status: 'pending_review' }),
+          PerformanceMetric.find({}, { orderBy: { column: 'metric_date', ascending: false }, limit: 30 })
         ]);
 
         // Calculate Search Console metrics from last 30 days

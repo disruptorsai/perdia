@@ -1,0 +1,53 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=yvvtsfgryweqfppilkvo"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "your_supabase_access_token"
+      },
+      "description": "Perdia Education Supabase project (yvvtsfgryweqfppilkvo)"
+    },
+    "netlify": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@netlify/mcp@latest"
+      ],
+      "env": {
+        "NETLIFY_AUTH_TOKEN": "your_netlify_auth_token",
+        "NETLIFY_SITE_ID": "371d61d6-ad3d-4c13-8455-52ca33d1c0d4"
+      },
+      "description": "Perdia Education Netlify project (perdia-education site)"
+    },
+    "cloudinary": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@felores/cloudinary-mcp-server@latest"
+      ],
+      "env": {
+        "CLOUDINARY_CLOUD_NAME": "your_cloud_name",
+        "CLOUDINARY_API_KEY": "your_api_key",
+        "CLOUDINARY_API_SECRET": "your_api_secret"
+      },
+      "description": "Cloudinary for Perdia image optimization"
+    },
+    "dataforseo": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "dataforseo-mcp-server"
+      ],
+      "env": {
+        "DATAFORSEO_USERNAME": "your_username",
+        "DATAFORSEO_PASSWORD": "your_password"
+      },
+      "description": "DataForSEO for keyword research and SEO data"
+    }
+  }
+}

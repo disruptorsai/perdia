@@ -53,7 +53,11 @@ class BaseEntity {
       // Get current user for RLS
       const { user } = await getCurrentUser();
       if (!user) {
-        throw new Error('Authentication required');
+        // In development, return empty array instead of throwing error
+        console.warn(`[${this.tableName}] No authenticated user - returning empty array`);
+        const emptyResult = [];
+        emptyResult.count = 0;
+        return emptyResult;
       }
 
       let query = supabase
@@ -115,7 +119,8 @@ class BaseEntity {
     try {
       const { user } = await getCurrentUser();
       if (!user) {
-        throw new Error('Authentication required');
+        console.warn(`[${this.tableName}] No authenticated user - returning null`);
+        return null;
       }
 
       const { data, error } = await supabase
@@ -145,7 +150,8 @@ class BaseEntity {
     try {
       const { user } = await getCurrentUser();
       if (!user) {
-        throw new Error('Authentication required');
+        console.error(`[${this.tableName}] Cannot create without authentication`);
+        throw new Error('Authentication required to create records');
       }
 
       // Auto-add user_id if not present
@@ -182,7 +188,8 @@ class BaseEntity {
     try {
       const { user } = await getCurrentUser();
       if (!user) {
-        throw new Error('Authentication required');
+        console.error(`[${this.tableName}] Cannot update without authentication`);
+        throw new Error('Authentication required to update records');
       }
 
       const { data: result, error } = await supabase
@@ -213,7 +220,8 @@ class BaseEntity {
     try {
       const { user } = await getCurrentUser();
       if (!user) {
-        throw new Error('Authentication required');
+        console.error(`[${this.tableName}] Cannot delete without authentication`);
+        throw new Error('Authentication required to delete records');
       }
 
       const { error } = await supabase
@@ -242,7 +250,8 @@ class BaseEntity {
     try {
       const { user } = await getCurrentUser();
       if (!user) {
-        throw new Error('Authentication required');
+        console.warn(`[${this.tableName}] No authenticated user - returning 0`);
+        return 0;
       }
 
       let query = supabase

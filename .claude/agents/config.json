@@ -1,0 +1,104 @@
+{
+  "agents": [
+    {
+      "name": "perdia-supabase-database-agent",
+      "description": "Project-specific Supabase database management agent for Perdia Education platform",
+      "triggers": {
+        "keywords": [
+          "database",
+          "supabase",
+          "postgres",
+          "postgresql",
+          "sql",
+          "table",
+          "schema",
+          "migration",
+          "rls",
+          "row level security",
+          "query",
+          "index",
+          "foreign key",
+          "constraint",
+          "trigger",
+          "storage",
+          "bucket",
+          "upload",
+          "auth",
+          "authentication",
+          "create table",
+          "add column",
+          "modify schema",
+          "alter table",
+          "optimize query",
+          "add index",
+          "improve performance",
+          "set up storage",
+          "create bucket",
+          "configure auth",
+          "add policy",
+          "update rls",
+          "migrate",
+          "seed",
+          "backup",
+          "restore",
+          "slow query",
+          "performance issue",
+          "timeout",
+          "permission denied",
+          "rls error",
+          "403 error",
+          "connection error",
+          "database error",
+          "query failed",
+          "storage error",
+          "upload failed",
+          "bucket not found"
+        ],
+        "patterns": [
+          ".*\\b(table|schema|database|supabase|postgres|migration|rls|query|index)\\b.*",
+          ".*\\b(storage|bucket|upload|auth)\\b.*",
+          ".*\\b(optimize|performance|slow)\\b.*"
+        ],
+        "automatic": true
+      },
+      "capabilities": [
+        "schema_management",
+        "rls_policy_management",
+        "migration_creation",
+        "sdk_integration",
+        "performance_optimization",
+        "storage_management",
+        "documentation_maintenance",
+        "proactive_suggestions"
+      ],
+      "mcp_integration": {
+        "server": "supabase",
+        "auto_use": true,
+        "commands": [
+          "describe-table",
+          "list-tables",
+          "query",
+          "check-policies",
+          "list-buckets",
+          "bucket-info"
+        ]
+      },
+      "project_specific": {
+        "project": "Perdia Education",
+        "supabase_project": "perdia",
+        "tables": 16,
+        "storage_buckets": 4,
+        "sdk_location": "src/lib/perdia-sdk.js",
+        "migration_location": "supabase/migrations/",
+        "patterns": "Base44-compatible SDK, Centralized Supabase client"
+      },
+      "documentation": {
+        "main": ".claude/agents/perdia-supabase-database-agent.md",
+        "reference": "CLAUDE.md",
+        "architecture": "ARCHITECTURE_GUIDE.md"
+      },
+      "priority": "high",
+      "auto_invoke": true
+    }
+  ]
+}
