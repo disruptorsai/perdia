@@ -9,8 +9,8 @@
 # ============================================================================
 
 [build]
-  # Build command (dependencies installed automatically by Netlify)
-  command = "npm run build"
+  # Build command - explicitly install all dependencies including dev
+  command = "npm install && npm run build"
 
   # Publish directory (Vite default output)
   publish = "dist"
@@ -19,11 +19,8 @@
   functions = "netlify/functions"
 
 [build.environment]
-  # Node version (20+ required for react-router)
+  # Node version (20+ required for react-router and vite)
   NODE_VERSION = "20"
-
-  # Ensure devDependencies are installed (includes Vite)
-  NPM_FLAGS = "--include=dev"
 
   # Secrets scanner configuration
   # Ignore example and documentation files that contain placeholder values
