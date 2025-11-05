@@ -3,18 +3,21 @@
  * ================================================
  * Centralized Supabase client setup for Perdia Education platform
  *
- * CRITICAL: This file creates SINGLE instances of Supabase clients to prevent
+ * CRITICAL: This file creates a SINGLE instance of the Supabase client to prevent
  * the "Multiple GoTrueClient instances" warning. All other modules should
  * import from this file, never create their own clients.
  *
  * Usage:
- *   import { supabase, supabaseAdmin } from '@/lib/supabase-client';
+ *   import { supabase, getCurrentUser } from '@/lib/supabase-client';
  *
  * Architecture:
  * - Single storage key: 'perdia-auth'
- * - Two clients: user (anon key) and admin (service role)
+ * - User client with anon key (RLS enforced)
  * - Auto-refresh enabled
  * - Persistent sessions across page reloads
+ *
+ * Note: Service role operations should be done in serverless functions,
+ * not in client-side code.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -25,7 +28,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL) {
   throw new Error('Missing VITE_SUPABASE_URL environment variable');
@@ -33,11 +35,6 @@ if (!SUPABASE_URL) {
 
 if (!SUPABASE_ANON_KEY) {
   throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable');
-}
-
-// Service role key is optional (only needed for admin operations)
-if (!SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('VITE_SUPABASE_SERVICE_ROLE_KEY not set - admin operations will be unavailable');
 }
 
 // =====================================================
@@ -70,38 +67,17 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // =====================================================
-// SUPABASE ADMIN CLIENT (ADMIN OPERATIONS)
+// ADMIN CLIENT NOTE
 // =====================================================
-
-/**
- * Admin Supabase client for privileged operations
- * - Uses service role key (bypasses RLS)
- * - ONLY use server-side or in secure contexts
- * - DO NOT expose this client to untrusted code
- *
- * WARNING: This client has unrestricted database access.
- * Only use for:
- * - Bulk operations
- * - Cross-user data aggregation
- * - System-level tasks
- * - Migration scripts
- */
-export const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-      db: {
-        schema: 'public',
-      },
-      global: {
-        headers: {
-          'X-Client-Info': 'perdia-education-platform-admin',
-        },
-      },
-    })
-  : null;
+// The admin client (supabaseAdmin) has been removed from client-side code
+// for security reasons. Service role keys should NEVER be exposed to the browser.
+//
+// For admin operations:
+// 1. Use Netlify serverless functions with SUPABASE_SERVICE_ROLE_KEY env var
+// 2. Use migration scripts (scripts/migrate-database.js, scripts/seed-agents.js)
+//
+// Migration scripts already have their own admin client setup using process.env
+// =====================================================
 
 // =====================================================
 // AUTHENTICATION HELPERS
@@ -561,7 +537,6 @@ export function subscribeToTable(table, callback, filter = null) {
 
 export default {
   supabase,
-  supabaseAdmin,
   // Auth
   getCurrentUser,
   isAuthenticated,

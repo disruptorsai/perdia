@@ -19,7 +19,7 @@
  *   const newKeyword = await Keyword.create({ keyword: 'test', list_type: 'new_target' });
  */
 
-import { supabase, supabaseAdmin, getCurrentUser } from './supabase-client';
+import { supabase, getCurrentUser } from './supabase-client';
 import { invokeLLM, generateImage } from './ai-client';
 import {
   uploadFile as uploadToStorage,
