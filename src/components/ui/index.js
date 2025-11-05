@@ -20,3 +20,8 @@ export { Avatar, AvatarImage, AvatarFallback } from './avatar';
 export { useToast } from './use-toast';
 export { Toaster } from './toaster';
 export { Toaster as SonnerToaster } from './sonner';
+
+// Animated components
+export { AnimatedCard, AnimatedStatCard, GlassCard } from './AnimatedCard';
+export { AnimatedButton } from './AnimatedButton';
+export { FloatingLabel, FloatingActionButton, AnimatedProgress, StaggerContainer } from './FloatingElements';
