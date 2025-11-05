@@ -1,0 +1,4 @@
+{
+  "description": "Shared Claude Code settings for the Perdia project",
+  "comment": "Team members can create settings.local.json to override with personal GitHub account preferences"
+}
