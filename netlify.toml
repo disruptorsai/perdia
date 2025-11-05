@@ -107,20 +107,20 @@
 
 # Production context
 [context.production]
-  command = "npm run build"
+  command = "npm install && npm run build"
   [context.production.environment]
     NODE_ENV = "production"
     VITE_APP_URL = "https://your-domain.com"
 
 # Deploy Preview context (for PRs)
 [context.deploy-preview]
-  command = "npm run build"
+  command = "npm install && npm run build"
   [context.deploy-preview.environment]
     NODE_ENV = "staging"
 
 # Branch deploy context
 [context.branch-deploy]
-  command = "npm run build"
+  command = "npm install && npm run build"
 
 # Development context (local)
 [context.dev]
