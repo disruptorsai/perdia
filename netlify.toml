@@ -19,11 +19,11 @@
   functions = "netlify/functions"
 
 [build.environment]
-  # Node version
-  NODE_VERSION = "18"
+  # Node version (20+ required for react-router)
+  NODE_VERSION = "20"
 
-  # NPM version
-  NPM_VERSION = "9"
+  # Ensure devDependencies are installed (includes Vite)
+  NPM_FLAGS = "--include=dev"
 
 # ============================================================================
 # REDIRECT RULES
