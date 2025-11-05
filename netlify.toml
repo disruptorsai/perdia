@@ -22,9 +22,6 @@
   # Node version (20+ required for react-router and vite)
   NODE_VERSION = "20"
 
-  # Force npm to install devDependencies (fixes vite: not found)
-  NPM_FLAGS = "--include=dev"
-
   # Secrets scanner configuration
   # Ignore example and documentation files that contain placeholder values
   SECRETS_SCAN_OMIT_PATHS = ".env.example,.claude/**/*.md,docs/**/*.md,base44-exports/**/*"
