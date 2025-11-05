@@ -10,7 +10,7 @@
 
 [build]
   # Build command (dependencies installed automatically by Netlify)
-  command = "npm ci && npm run build"
+  command = "npm run build"
 
   # Publish directory (Vite default output)
   publish = "dist"
@@ -24,6 +24,10 @@
 
   # Ensure devDependencies are installed (includes Vite)
   NPM_FLAGS = "--include=dev"
+
+  # Secrets scanner configuration
+  # Ignore example and documentation files that contain placeholder values
+  SECRETS_SCAN_OMIT_PATHS = ".env.example,.claude/**/*.md,docs/**/*.md,base44-exports/**/*"
 
 # ============================================================================
 # REDIRECT RULES
