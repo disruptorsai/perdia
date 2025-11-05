@@ -10,6 +10,8 @@
 
 [build]
   # Build command - explicitly install all dependencies including dev
+  # Note: vite, tailwindcss, and build tools moved to dependencies (not devDependencies)
+  # to ensure they're installed even when NODE_ENV=production
   command = "npm install && npm run build"
 
   # Publish directory (Vite default output)
