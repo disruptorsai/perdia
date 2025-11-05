@@ -1,0 +1,151 @@
+# ============================================================================
+# PERDIA EDUCATION - NETLIFY CONFIGURATION
+# ============================================================================
+# This file configures Netlify deployment for the Perdia Education platform
+# ============================================================================
+
+[build]
+  # Build command
+  command = "npm run build"
+
+  # Publish directory (Vite default output)
+  publish = "dist"
+
+  # Functions directory (for serverless functions)
+  functions = "netlify/functions"
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "18"
+
+  # NPM version
+  NPM_VERSION = "9"
+
+# ============================================================================
+# REDIRECT RULES
+# ============================================================================
+
+# Redirect all routes to index.html for client-side routing (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API proxy to Supabase (optional - for additional security)
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-supabase-project.supabase.co/:splat"
+  status = 200
+  force = true
+
+# ============================================================================
+# HEADERS
+# ============================================================================
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache fonts
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Don't cache HTML
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+# Set these in Netlify dashboard: Site settings > Environment variables
+#
+# REQUIRED:
+# - VITE_SUPABASE_URL
+# - VITE_SUPABASE_ANON_KEY
+# - VITE_ANTHROPIC_API_KEY
+# - VITE_OPENAI_API_KEY
+#
+# OPTIONAL:
+# - VITE_SUPABASE_SERVICE_ROLE_KEY (for serverless functions)
+# - VITE_CLOUDINARY_CLOUD_NAME
+# - VITE_CLOUDINARY_API_KEY
+# - VITE_CLOUDINARY_API_SECRET
+# - VITE_GA_MEASUREMENT_ID
+# ============================================================================
+
+# ============================================================================
+# PLUGINS
+# ============================================================================
+
+# None required for basic deployment
+# Add plugins here if needed (e.g., Sentry, analytics)
+
+# ============================================================================
+# CONTEXT-SPECIFIC CONFIGURATION
+# ============================================================================
+
+# Production context
+[context.production]
+  command = "npm run build"
+  [context.production.environment]
+    NODE_ENV = "production"
+    VITE_APP_URL = "https://your-domain.com"
+
+# Deploy Preview context (for PRs)
+[context.deploy-preview]
+  command = "npm run build"
+  [context.deploy-preview.environment]
+    NODE_ENV = "staging"
+
+# Branch deploy context
+[context.branch-deploy]
+  command = "npm run build"
+
+# Development context (local)
+[context.dev]
+  command = "npm run dev"
+  targetPort = 5173
+  autoLaunch = false
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# DEPLOYMENT STEPS:
+#
+# 1. Connect GitHub repository to Netlify
+# 2. Set environment variables in Netlify dashboard
+# 3. Configure build settings (or use this file)
+# 4. Deploy!
+#
+# AUTOMATIC DEPLOYS:
+# - Pushes to master branch trigger production deploys
+# - Pull requests create deploy previews
+#
+# CUSTOM DOMAIN:
+# - Add custom domain in Netlify dashboard
+# - Update VITE_APP_URL environment variable
+# - Configure DNS records
+#
+# SERVERLESS FUNCTIONS (OPTIONAL):
+# - Create functions in netlify/functions/
+# - Access at: /.netlify/functions/function-name
+# - Use for server-side operations (e.g., WordPress publishing)
+#
+# ============================================================================
