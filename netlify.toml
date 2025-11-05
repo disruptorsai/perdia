@@ -9,8 +9,8 @@
 # ============================================================================
 
 [build]
-  # Build command
-  command = "npm run build"
+  # Build command (dependencies installed automatically by Netlify)
+  command = "npm ci && npm run build"
 
   # Publish directory (Vite default output)
   publish = "dist"
