@@ -47,3 +47,10 @@ logs/
 
 # Local Netlify folder
 .netlify
+
+# Credential documentation (contains actual API keys/secrets)
+CREDENTIALS_QUICK_REFERENCE.md
+NEW_DEVICE_SETUP_GUIDE.md
+
+# Auth bypass documentation
+AUTH_DISABLED_FOR_TESTING.md
