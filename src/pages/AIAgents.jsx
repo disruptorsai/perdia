@@ -110,6 +110,11 @@ export default function AIAgents() {
     }, [selectedAgentName]);
 
     useEffect(() => {
+        // DEVELOPMENT MODE: Auth disabled, skip auth check
+        setAuthChecked(true);
+        loadClientAgents();
+
+        /* ORIGINAL AUTH CHECK - Uncomment when ready to enable auth
         const checkAuth = async () => {
             try {
                 await User.me();
@@ -123,6 +128,7 @@ export default function AIAgents() {
             }
         };
         checkAuth();
+        */
     }, [loadClientAgents]);
 
     useEffect(() => {
