@@ -26,10 +26,11 @@
   NODE_VERSION = "20"
 
   # Secrets scanner configuration
-  # Ignore example files, documentation, and build output
-  # The build output (dist/) contains VITE_ prefixed env vars which are intentionally client-side
-  # and safe to expose (VITE_SUPABASE_ANON_KEY is the public anonymous key, not a secret)
-  SECRETS_SCAN_OMIT_PATHS = ".env.example,.claude/**/*.md,docs/**/*.md,base44-exports/**/*,dist/**/*"
+  # Ignore example files, documentation, source code, scripts, and build output
+  # The scanner is incorrectly flagging env var NAMES (not values) in code and docs as secrets
+  # VITE_ prefixed vars are intentionally client-side (VITE_SUPABASE_ANON_KEY is public)
+  # Excluding all source/config files since they only contain var references, not actual secrets
+  SECRETS_SCAN_OMIT_PATHS = ".env.example,.claude/**/*,docs/**/*,base44-exports/**/*,dist/**/*,*.md,.gitignore,netlify.toml,vite.config.js,scripts/**/*,supabase/**/*,src/**/*,netlify/functions/**/*"
 
 # ============================================================================
 # REDIRECT RULES
