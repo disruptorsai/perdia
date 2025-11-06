@@ -318,6 +318,169 @@ const { url } = await CreateFileSignedUrl({
 });
 ```
 
+### 7. UI Components & React Patterns
+
+**Component Library:** shadcn/ui (Radix UI primitives + TailwindCSS)
+
+**Location:** `src/components/ui/`
+
+**Available UI Components:**
+- Form controls: Button, Input, Textarea, Select, Checkbox, Switch, RadioGroup, Slider
+- Layout: Card, Separator, ScrollArea, Tabs, Accordion, Collapsible
+- Overlay: Dialog, AlertDialog, Sheet, Popover, Tooltip, HoverCard, ContextMenu, DropdownMenu
+- Feedback: Toast (sonner), Alert, Progress, Skeleton
+- Data: Table, Avatar, Badge, Calendar, Command (cmdk)
+- Advanced: Carousel, Resizable Panels, Charts (recharts)
+
+**Styling Pattern:**
+```javascript
+import { cn } from '@/lib/utils';
+
+// Use cn() to merge Tailwind classes
+<div className={cn(
+  "base-classes",
+  condition && "conditional-classes",
+  customClassName
+)} />
+```
+
+**Common Patterns:**
+
+**1. Page Layout:**
+```javascript
+import { AppLayout } from '@/components/layout/AppLayout';
+
+export default function MyPage() {
+  return (
+    <AppLayout>
+      <div className="p-6">
+        {/* Page content */}
+      </div>
+    </AppLayout>
+  );
+}
+```
+
+**2. Data Fetching:**
+```javascript
+import { useState, useEffect } from 'react';
+import { Keyword } from '@/lib/perdia-sdk';
+
+function KeywordList() {
+  const [keywords, setKeywords] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadKeywords() {
+      const data = await Keyword.find({}, { limit: 50 });
+      setKeywords(data);
+      setLoading(false);
+    }
+    loadKeywords();
+  }, []);
+
+  // Component render...
+}
+```
+
+**3. Realtime Subscriptions:**
+```javascript
+useEffect(() => {
+  // Subscribe to changes
+  const subscription = Keyword.subscribe((payload) => {
+    if (payload.eventType === 'INSERT') {
+      setKeywords(prev => [...prev, payload.new]);
+    }
+    if (payload.eventType === 'UPDATE') {
+      setKeywords(prev => prev.map(k =>
+        k.id === payload.new.id ? payload.new : k
+      ));
+    }
+    if (payload.eventType === 'DELETE') {
+      setKeywords(prev => prev.filter(k => k.id !== payload.old.id));
+    }
+  });
+
+  // Cleanup
+  return () => subscription?.unsubscribe();
+}, []);
+```
+
+**4. Forms with react-hook-form + zod:**
+```javascript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const schema = z.object({
+  keyword: z.string().min(1, 'Required'),
+  search_volume: z.number().min(0)
+});
+
+function KeywordForm() {
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { keyword: '', search_volume: 0 }
+  });
+
+  const onSubmit = async (values) => {
+    await Keyword.create(values);
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      {/* Form fields */}
+    </form>
+  );
+}
+```
+
+**5. Toast Notifications:**
+```javascript
+import { toast } from 'sonner';
+
+// Success
+toast.success('Keyword created successfully');
+
+// Error
+toast.error('Failed to create keyword');
+
+// Loading
+toast.loading('Creating keyword...');
+```
+
+### 8. Routing Patterns
+
+**Router:** React Router v7
+
+**Configuration:** `src/pages/Pages.jsx`
+
+**Route Structure:**
+```javascript
+// Protected routes require authentication
+<Route element={<Layout />}>
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/keywords" element={<KeywordManager />} />
+  <Route path="/content" element={<ContentLibrary />} />
+  <Route path="/agents" element={<AIAgents />} />
+  {/* ... */}
+</Route>
+
+// Public routes
+<Route path="/login" element={<Login />} />
+```
+
+**Navigation:**
+```javascript
+import { useNavigate } from 'react-router-dom';
+
+const navigate = useNavigate();
+navigate('/keywords');
+```
+
+**Route Protection:**
+Routes are wrapped in `<Layout />` which handles authentication checks. Unauthenticated users are redirected to login.
+
 ## Environment Variables
 
 **Required:**
@@ -358,27 +521,49 @@ See `.env.example` for complete list with detailed comments.
 ```
 perdia/
 ├── src/
-│   └── lib/                        # Core SDK files (only directory with code so far)
-│       ├── supabase-client.js      # Centralized Supabase client ⚠️ ALWAYS USE THIS
-│       ├── perdia-sdk.js           # Custom SDK (Base44-compatible, 790 lines)
-│       ├── ai-client.js            # AI integration (Claude + OpenAI)
-│       └── agent-sdk.js            # Agent conversation system
+│   ├── lib/                        # Core SDK files ⚠️ CRITICAL
+│   │   ├── supabase-client.js      # Centralized Supabase client - ALWAYS USE THIS
+│   │   ├── perdia-sdk.js           # Custom SDK (Base44-compatible, 790 lines)
+│   │   ├── ai-client.js            # AI integration (Claude + OpenAI)
+│   │   ├── agent-sdk.js            # Agent conversation system
+│   │   └── utils.js                # Utility functions (cn, etc.)
+│   ├── components/                 # React components (100+ files)
+│   │   ├── ui/                     # shadcn/ui components (Radix-based)
+│   │   ├── agents/                 # AI agent interfaces
+│   │   ├── content/                # Content queue, editor
+│   │   ├── dashboard/              # Dashboard widgets
+│   │   ├── layout/                 # App layout components
+│   │   └── ...                     # Other feature components
+│   ├── pages/                      # Route pages (16 pages)
+│   │   ├── Pages.jsx               # Router configuration
+│   │   ├── Layout.jsx              # Main layout wrapper
+│   │   ├── Dashboard.jsx           # Main dashboard
+│   │   ├── AIAgents.jsx            # Agent interface
+│   │   ├── KeywordManager.jsx      # Keyword management
+│   │   ├── ContentLibrary.jsx      # Content queue
+│   │   └── ...                     # Other pages
+│   ├── hooks/                      # Custom React hooks
+│   ├── App.jsx                     # Root component
+│   └── main.jsx                    # Entry point
 ├── supabase/
 │   └── migrations/
 │       └── 20250104000001_perdia_complete_schema.sql  # Complete DB schema
 ├── scripts/
 │   ├── migrate-database.js         # Apply migrations
 │   └── seed-agents.js              # Seed 9 AI agents
-├── docs/
-│   ├── PERDIA_MIGRATION_COMPLETE.md      # Migration report
-│   └── SETUP_GUIDE.md                    # Complete setup guide
+├── docs/                           # Documentation
+├── netlify/                        # Netlify serverless functions
 ├── .env.example                    # Environment variables template
+├── vite.config.js                  # Vite configuration (path aliases)
 ├── package.json                    # Dependencies and scripts
 ├── netlify.toml                    # Deployment configuration
 └── README.md                       # Project overview
 ```
 
-**Note:** Most React components not yet created - only the core SDK layer exists. This is a post-migration project ready for UI development.
+**Path Aliases:**
+- `@/` → `src/` (defined in vite.config.js)
+- Always use `@/lib/supabase-client` not relative paths
+- Example: `import { supabase } from '@/lib/supabase-client'`
 
 ## Migration Context
 
@@ -391,6 +576,34 @@ This codebase was **migrated from Base44** platform. Key architectural decisions
 5. **Netlify Deployment** - Serverless functions + static hosting
 
 **Legacy Tables:** 11 entities defined but not implemented (EOSCompany, EOSRock, EOSIssue, Client, Project, Task, etc.) - kept in SDK for future compatibility, not used by current platform.
+
+## Type Safety
+
+**Type Checking:** TypeScript (tsconfig.json) + JSDoc for JavaScript files
+
+**Run Type Check:**
+```bash
+npm run type-check
+```
+
+**JSDoc Patterns for SDK Functions:**
+```javascript
+/**
+ * Finds records matching the filter
+ * @param {Object} filter - Query filters
+ * @param {Object} options - Query options (orderBy, limit, offset)
+ * @returns {Promise<Array>} Records with .count property
+ */
+async function find(filter = {}, options = {}) {
+  // Implementation
+}
+```
+
+**Type Safety Best Practices:**
+- Run `npm run type-check` before commits
+- Add JSDoc comments for all exported functions
+- Use Zod schemas for form validation and runtime type checking
+- TypeScript configured for type checking .jsx files via JSDoc
 
 ## Common Development Workflows
 
@@ -635,7 +848,7 @@ VITE_DEBUG=true npm run dev
 
 ---
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-01-06
 **Version:** 1.0.0
-**Status:** ✅ Post-Migration - SDK Layer Complete, Ready for UI Development
+**Status:** ✅ Post-Migration - SDK Layer Complete, UI Development In Progress
 **Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4

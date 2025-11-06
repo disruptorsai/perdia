@@ -27,56 +27,25 @@ export default function AIAgents() {
     const loadClientAgents = useCallback(async () => {
         setLoading(true);
         try {
-            const clientAgentConfigs = [
-                {
-                    name: 'general_content_assistant',
-                    display_name: 'General Assistant',
-                    description: 'A versatile AI for general questions and content creation'
-                },
-                {
-                    name: 'emma_promoter',
-                    display_name: 'EMMA™ Promoter',
-                    description: 'Creates promotional content, demos, and social threads for EMMA™ mobile enrollment app'
-                },
-                {
-                    name: 'enrollment_strategist',
-                    display_name: 'Enrollment Strategist',
-                    description: 'Develops enrollment strategy guides, blueprints, and case studies for institutions'
-                },
-                {
-                    name: 'history_storyteller',
-                    display_name: 'History & Team Storyteller',
-                    description: 'Crafts founder stories, company timelines, and heritage content'
-                },
-                {
-                    name: 'resource_expander',
-                    display_name: 'Resource Expander',
-                    description: 'Creates lead magnets, checklists, white papers, and downloadable resources'
-                },
-                {
-                    name: 'social_engagement_booster',
-                    display_name: 'Social Engagement Booster',
-                    description: 'Creates polls, reply templates, and high-engagement social content'
-                },
-                {
-                    name: 'seo_content_writer',
-                    display_name: 'SEO Content Writer',
-                    description: 'Creates SEO-optimized long-form articles and blog posts for education topics'
-                },
-                {
-                    name: 'content_optimizer',
-                    display_name: 'Content Optimizer',
-                    description: 'Rewrites and optimizes existing pages for better SEO performance'
-                },
-                {
-                    name: 'keyword_researcher',
-                    display_name: 'Keyword Researcher',
-                    description: 'Suggests relevant keywords and analyzes search trends'
-                }
-            ];
+            // Load agents from database instead of hardcoding
+            const agents = await agentSDK.listAgents();
+
+            // Transform database agents to match expected format
+            const clientAgentConfigs = agents.map(agent => ({
+                name: agent.agent_name,
+                display_name: agent.display_name,
+                description: agent.description,
+                system_prompt: agent.system_prompt,
+                default_model: agent.default_model,
+                temperature: agent.temperature,
+                max_tokens: agent.max_tokens,
+                capabilities: agent.capabilities,
+                icon: agent.icon,
+                color: agent.color,
+            }));
 
             setClientAgents(clientAgentConfigs);
-            
+
             if (!selectedAgentName && clientAgentConfigs.length > 0) {
                 setSelectedAgentName(clientAgentConfigs[0].name);
             }
