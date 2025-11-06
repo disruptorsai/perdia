@@ -510,6 +510,11 @@ await ContentQueue.update(draft.id, {
 - **Account:** Perdia Education (New Netlify Account)
 - **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
 
+**🔧 Claude Code MCP Configuration:**
+- **MCP Account:** `netlify-primary` (DisruptorsAI)
+- **Token:** `nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06`
+- **Usage:** Always use `netlify-primary` MCP server for this project
+
 **Build Settings:**
 - Build command: `npm run build`
 - Publish directory: `dist`
@@ -531,6 +536,9 @@ netlify env:list             # List environment variables
 netlify open:site            # Open deployed site
 netlify open:admin           # Open Netlify dashboard
 ```
+
+**Important for Claude Code:**
+When working with Netlify operations via MCP, always use the `netlify-primary` server (DisruptorsAI account). This ensures all deployment, environment variable, and build commands target the correct Netlify account for this project.
 
 ## Common Pitfalls
 

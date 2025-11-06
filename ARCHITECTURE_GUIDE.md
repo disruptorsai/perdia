@@ -669,8 +669,11 @@ try {
 **Current Deployment:**
 - **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 - **Account:** Perdia Education (New Netlify Account)
+- **Claude Code MCP:** `netlify-primary` (DisruptorsAI account)
 - **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
 - **Status:** ✅ Connected and Auto-Deploy Enabled
+
+> **Note for Claude Code:** Always use the `netlify-primary` MCP server when performing Netlify operations for this project.
 
 ### Environment Variables
 

@@ -173,6 +173,7 @@ npm run setup        # Complete setup (install + migrate + seed)
 
 - **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 - **Account:** Perdia Education (New Netlify Account)
+- **MCP Account:** `netlify-primary` (DisruptorsAI)
 - **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
 - **Status:** ✅ Repository Connected
 
