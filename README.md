@@ -24,6 +24,17 @@ npm run dev
 
 **Access:** http://localhost:5173
 
+### 🧪 Testing Without Authentication
+
+Want to test the app without setting up authentication? See **[TESTING_WITHOUT_AUTH.md](./TESTING_WITHOUT_AUTH.md)** for instructions on enabling development mode.
+
+**Quick version:**
+1. Go to your Supabase SQL Editor
+2. Run the SQL from `supabase/migrations/dev_mode_disable_rls.sql`
+3. Restart dev server
+
+The app will work with a mock user - no login required!
+
 ---
 
 ## 📖 What is Perdia?

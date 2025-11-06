@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "db:migrate": "node scripts/migrate-database.js",
     "db:seed": "node scripts/seed-agents.js",
+    "dev:mode": "node scripts/enable-dev-mode.js",
     "setup": "npm install && npm run db:migrate && npm run db:seed",
     "type-check": "tsc --noEmit"
   },
