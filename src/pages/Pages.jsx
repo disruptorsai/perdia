@@ -50,7 +50,7 @@ function AuthenticatedRoute({ children }) {
 
   const checkUser = async () => {
     try {
-      const currentUser = await getCurrentUser();
+      const { user: currentUser } = await getCurrentUser();
       setUser(currentUser);
     } catch (error) {
       console.error('Error checking auth:', error);
