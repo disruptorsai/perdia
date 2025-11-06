@@ -5,6 +5,7 @@
 #
 # Project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
 # Account: Perdia Education (New Netlify Account)
+# Claude Code MCP: netlify-primary (DisruptorsAI)
 # Last Updated: 2025-11-05
 # ============================================================================
 
@@ -82,11 +83,13 @@
 # ============================================================================
 # Set these in Netlify dashboard: Site settings > Environment variables
 #
-# REQUIRED:
-# - VITE_SUPABASE_URL
-# - VITE_SUPABASE_ANON_KEY
-# - VITE_ANTHROPIC_API_KEY
-# - VITE_OPENAI_API_KEY
+# REQUIRED (CLIENT-SIDE - VITE_ prefix):
+# - VITE_SUPABASE_URL (Supabase project URL)
+# - VITE_SUPABASE_ANON_KEY (public anonymous key)
+#
+# REQUIRED (SERVER-SIDE - NO VITE_ prefix for Functions):
+# - ANTHROPIC_API_KEY (Claude API key for serverless functions)
+# - OPENAI_API_KEY (OpenAI API key for serverless functions)
 #
 # OPTIONAL:
 # - VITE_SUPABASE_SERVICE_ROLE_KEY (for serverless functions)
@@ -137,7 +140,12 @@
 # PROJECT INFORMATION:
 # - Project ID: 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
 # - Account: Perdia Education (New Netlify Account)
+# - Claude Code MCP: netlify-primary (DisruptorsAI account)
 # - Dashboard: https://app.netlify.com/sites/perdia-education/overview
+#
+# CLAUDE CODE USERS:
+# - Always use netlify-primary MCP server for this project
+# - Token: nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06
 #
 # DEPLOYMENT STEPS:
 #

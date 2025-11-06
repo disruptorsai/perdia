@@ -22,9 +22,15 @@
 **Current Deployment Status:**
 - **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 - **Account:** Perdia Education (New Netlify Account)
+- **Claude Code MCP:** `netlify-primary` (DisruptorsAI account)
 - **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
 - **Status:** ✅ Repository Connected
 - **Auto-Deploy:** ✅ Enabled on `main` branch
+
+> **⚠️ Important for Claude Code Users:**
+> This project uses the **netlify-primary** MCP server (DisruptorsAI account).
+> Always ensure Claude Code operations target this account for deployments,
+> environment variables, and build management.
 
 **Build Configuration:**
 - **Build Command:** `npm run build`
@@ -89,12 +95,22 @@ Every pull request automatically gets a preview deployment:
 Set these in the Netlify Dashboard:
 https://app.netlify.com/sites/perdia-education/configuration/env
 
+**Client-Side Variables (VITE_ prefix):**
+
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `VITE_SUPABASE_URL` | Supabase project URL | `https://abc123.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key (public) | `eyJhbG...` |
-| `VITE_ANTHROPIC_API_KEY` | Claude API key | `sk-ant-...` |
-| `VITE_OPENAI_API_KEY` | OpenAI API key | `sk-...` |
+
+**Server-Side Variables (NO VITE_ prefix - for Netlify Functions):**
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ANTHROPIC_API_KEY` | Claude API key (server-side) | `sk-ant-...` |
+| `OPENAI_API_KEY` | OpenAI API key (server-side) | `sk-...` |
+
+> **⚠️ IMPORTANT:** AI API keys are used by serverless functions and must NOT have the `VITE_` prefix.
+> The functions access these via `process.env.ANTHROPIC_API_KEY` and `process.env.OPENAI_API_KEY`.
 
 ### Optional Variables
 
