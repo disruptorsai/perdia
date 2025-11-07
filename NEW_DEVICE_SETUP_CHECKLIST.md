@@ -54,7 +54,7 @@ Use this checklist to verify your setup is complete.
   - [ ] Access token: `sbp_56a2e431ef...`
 
 - [ ] Netlify MCP server configured
-  - [ ] Auth token: `nfp_MLwjLNbFh8c...`
+  - [ ] Auth token: (get from secure storage)
   - [ ] Site ID: `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 
 - [ ] Cloudinary MCP server configured

@@ -13,7 +13,7 @@ This Perdia Education repository is configured to use the **primary (DisruptorsA
 
 - **MCP Server Name:** `netlify-primary`
 - **Account:** DisruptorsAI
-- **Token:** `nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06`
+- **Token:** (stored securely in MCP configuration)
 - **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
 - **Site Name:** perdia-education
 - **Dashboard:** https://app.netlify.com/sites/perdia-education/overview
@@ -22,7 +22,7 @@ This Perdia Education repository is configured to use the **primary (DisruptorsA
 
 - **MCP Server Name:** `netlify-secondary`
 - **Account:** TechIntegrationLabs
-- **Token:** `nfp_MLwjLNbFh8cHfP6Bdoy4fTmBaUP5EPEi61d7`
+- **Token:** (stored securely in MCP configuration)
 - **Usage:** For other projects only
 
 ---
@@ -104,7 +104,7 @@ These files were reviewed but did not require updates:
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-netlify"],
       "env": {
-        "NETLIFY_AUTH_TOKEN": "nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06"
+        "NETLIFY_AUTH_TOKEN": "your_netlify_token_here"
       }
     }
   }

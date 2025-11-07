@@ -725,7 +725,7 @@ await ContentQueue.update(draft.id, {
 
 **🔧 Claude Code MCP Configuration:**
 - **MCP Account:** `netlify-primary` (DisruptorsAI)
-- **Token:** `nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06`
+- **Token:** (stored securely in MCP configuration)
 - **Usage:** Always use `netlify-primary` MCP server for this project
 
 **Build Settings:**

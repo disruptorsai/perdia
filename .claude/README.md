@@ -61,7 +61,7 @@ This repository uses **project-specific MCP (Model Context Protocol) servers** t
 - **Supabase Project:** `yvvtsfgryweqfppilkvo` (Perdia Education database)
 - **Netlify Site:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4` (perdia-education)
   - **MCP Account:** `netlify-primary` (DisruptorsAI)
-  - **Token:** `nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06`
+  - **Token:** (stored securely in MCP configuration)
 - **Cloudinary:** Media optimization for Perdia
 - **DataForSEO:** Keyword research and SEO data
 

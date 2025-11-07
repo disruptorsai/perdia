@@ -22,7 +22,7 @@ Perdia Education Platform:
 
 MCP Configuration:
 - MCP Account: netlify-primary (DisruptorsAI account managing Perdia Education project)
-- Token: nfp_MnQi8ZEPrTaGqoT9TBdhba5k3BuDaQLBfb06
+- Token: (stored securely in MCP configuration)
 - MCP Server: @netlify/mcp@latest configured in Claude Code
 - Usage: Always use netlify-primary MCP server for all Netlify operations
 
