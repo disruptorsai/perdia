@@ -26,6 +26,8 @@ export default function ContentEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState(null);
+  const [lastSaved, setLastSaved] = useState(null);
 
   useEffect(() => {
     loadContent();
@@ -41,6 +43,61 @@ export default function ContentEditor() {
       setWordCount(0);
     }
   }, [body]);
+
+  // Auto-save effect
+  useEffect(() => {
+    // Don't auto-save if content hasn't loaded yet
+    if (!content || loading) return;
+
+    // Don't auto-save if nothing has changed
+    if (
+      title === (content.title || '') &&
+      body === (content.content || '') &&
+      metaDescription === (content.meta_description || '')
+    ) {
+      return;
+    }
+
+    // Clear existing timeout
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+    }
+
+    // Set new timeout to save after 3 seconds of inactivity
+    const timeout = setTimeout(async () => {
+      if (title.trim() && body.trim()) {
+        try {
+          await ContentQueue.update(id, {
+            title: title.trim(),
+            content: body,
+            meta_description: metaDescription.trim(),
+            slug: slug.trim() || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            word_count: wordCount,
+            updated_date: new Date().toISOString()
+          });
+
+          setLastSaved(new Date());
+          setContent(prev => ({
+            ...prev,
+            title,
+            content: body,
+            meta_description: metaDescription,
+            slug,
+            word_count: wordCount
+          }));
+        } catch (error) {
+          console.error('Auto-save failed:', error);
+        }
+      }
+    }, 3000);
+
+    setAutoSaveTimeout(timeout);
+
+    // Cleanup on unmount
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [title, body, metaDescription, content, loading]);
 
   const loadContent = async () => {
     setLoading(true);
@@ -223,7 +280,13 @@ export default function ContentEditor() {
             Back to Content Library
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {lastSaved && (
+              <span className="text-sm text-slate-500 flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600" />
+                Auto-saved {new Date(lastSaved).toLocaleTimeString()}
+              </span>
+            )}
             <Badge variant={isPublished ? 'default' : 'outline'}>
               {content.status || 'draft'}
             </Badge>

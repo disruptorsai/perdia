@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, Search, Key, Loader2, Trash2, Plus, TrendingUp, Sparkles, ArrowUpDown, Target, ListChecks, PenSquare } from 'lucide-react';
+import { Upload, Download, Search, Key, Loader2, Trash2, Plus, TrendingUp, Sparkles, ArrowUpDown, Target, ListChecks, PenSquare, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +20,7 @@ import {
 import { InvokeLLM } from '@/api/integrations';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DataForSEOClient } from '@/lib/dataforseo-client';
 
 export default function KeywordManager() {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ export default function KeywordManager() {
   const [suggestionInput, setSuggestionInput] = useState('');
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
   const [generatingArticle, setGeneratingArticle] = useState(null);
+  const [fetchingKeywordData, setFetchingKeywordData] = useState(null);
 
   useEffect(() => {
     loadKeywords();
@@ -344,6 +346,58 @@ Begin with an engaging introduction and write the complete article now:`;
     }
   };
 
+  const handleFetchKeywordData = async (keyword) => {
+    setFetchingKeywordData(keyword.id);
+
+    try {
+      toast.loading('Fetching keyword data from DataForSEO...', { id: 'fetch-keyword-data' });
+
+      // Create DataForSEO client
+      const dataForSEO = new DataForSEOClient();
+
+      // Fetch comprehensive keyword data
+      const data = await dataForSEO.getKeywordData(keyword.keyword);
+
+      // Update keyword with real data
+      await Keyword.update(keyword.id, {
+        search_volume: data.search_volume || 0,
+        competition: Math.round((data.competition || 0) * 100), // Convert 0-1 to 0-100
+        difficulty: dataForSEO.calculateDifficulty(data.competition || 0, data.competition_level),
+        cpc: data.cpc || 0,
+        trend_direction: data.trends?.trend || 'stable',
+        monthly_searches: data.monthly_searches || []
+      });
+
+      toast.success('Keyword data updated!', {
+        id: 'fetch-keyword-data',
+        description: `Volume: ${data.search_volume?.toLocaleString() || 0} | CPC: $${data.cpc?.toFixed(2) || 0}`
+      });
+
+      // Reload keywords to show updated data
+      loadKeywords();
+
+    } catch (error) {
+      console.error('Error fetching keyword data:', error);
+
+      // Provide helpful error messages
+      let errorMessage = 'Failed to fetch keyword data';
+
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        errorMessage = 'Invalid DataForSEO credentials. Check your .env.local file.';
+      } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+        errorMessage = 'API rate limit exceeded. Please try again later.';
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorMessage = 'Network error. Check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage, { id: 'fetch-keyword-data' });
+    } finally {
+      setFetchingKeywordData(null);
+    }
+  };
+
   const handleAutoCluster = async (listType) => {
     const keywordsToCluster = keywords.filter(kw => kw.list_type === listType);
 
@@ -561,6 +615,26 @@ Format:
                   )}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleFetchKeywordData(keyword)}
+                        disabled={fetchingKeywordData === keyword.id}
+                        className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                        title="Get real keyword data from DataForSEO"
+                      >
+                        {fetchingKeywordData === keyword.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Fetching...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Get Data
+                          </>
+                        )}
+                      </Button>
                       <Button
                         variant="default"
                         size="sm"

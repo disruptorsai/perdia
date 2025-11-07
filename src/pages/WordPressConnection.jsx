@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { WordPressConnection } from '@/api/entities';
+import { WordPressClient } from '@/lib/wordpress-client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Globe, CheckCircle, XCircle, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Globe, CheckCircle, XCircle, Loader2, ExternalLink, AlertCircle, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function WordPressConnectionPage() {
@@ -14,7 +16,8 @@ export default function WordPressConnectionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  
+  const [wpUserInfo, setWpUserInfo] = useState(null);
+
   const [formData, setFormData] = useState({
     site_url: '',
     username: '',
@@ -57,25 +60,34 @@ export default function WordPressConnectionPage() {
     }
 
     setTesting(true);
-    try {
-      // Construct API URL
-      const siteUrl = formData.site_url.replace(/\/$/, '');
-      const apiUrl = `${siteUrl}/wp-json/wp/v2`;
-      
-      // Test connection by fetching site info
-      const auth = btoa(`${formData.username}:${formData.application_password}`);
-      const response = await fetch(`${apiUrl}/users/me`, {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
-      });
+    setWpUserInfo(null);
 
-      if (response.ok) {
-        const userData = await response.json();
+    try {
+      toast.loading('Testing WordPress connection...', { id: 'test-connection' });
+
+      // Create WordPress client
+      const wp = new WordPressClient(
+        formData.site_url,
+        formData.username,
+        formData.application_password
+      );
+
+      // Test connection
+      const result = await wp.testConnection();
+
+      if (result.success) {
+        // Store WordPress user info
+        setWpUserInfo(result.user);
+
         toast.success('Connection successful!', {
-          description: `Connected as ${userData.name}`
+          id: 'test-connection',
+          description: `Connected as ${result.user.name} (${result.user.email})`
         });
-        
+
+        // Construct API URL
+        const siteUrl = formData.site_url.replace(/\/$/, '');
+        const apiUrl = `${siteUrl}/wp-json/wp/v2`;
+
         // Save/update connection with verified status
         if (connection) {
           await WordPressConnection.update(connection.id, {
@@ -93,26 +105,33 @@ export default function WordPressConnectionPage() {
           });
           setConnection(newConnection);
         }
-        
+
         loadConnection();
-      } else {
-        const error = await response.json();
-        toast.error('Connection failed', {
-          description: error.message || 'Invalid credentials or API access denied'
-        });
-        
-        if (connection) {
-          await WordPressConnection.update(connection.id, {
-            connection_status: 'error'
-          });
-        }
       }
     } catch (error) {
       console.error("Connection test failed:", error);
+
+      // Extract meaningful error message
+      let errorMessage = 'Could not reach WordPress site. Check URL and credentials.';
+
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        errorMessage = 'Invalid username or application password. Please check your credentials.';
+      } else if (error.message.includes('404') || error.message.includes('Not Found')) {
+        errorMessage = 'WordPress REST API not found. Make sure the site URL is correct and REST API is enabled.';
+      } else if (error.message.includes('CORS')) {
+        errorMessage = 'Cross-origin request blocked. The WordPress site may need to allow requests from this domain.';
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorMessage = 'Network error. Check the site URL and your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast.error('Connection failed', {
-        description: 'Could not reach WordPress site. Check URL and credentials.'
+        id: 'test-connection',
+        description: errorMessage
       });
-      
+
+      // Update connection status to error
       if (connection) {
         await WordPressConnection.update(connection.id, {
           connection_status: 'error'
@@ -194,6 +213,72 @@ export default function WordPressConnectionPage() {
             Configure your WordPress connection below to enable direct publishing.
           </AlertDescription>
         </Alert>
+      )}
+
+      {wpUserInfo && (
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-900">
+              <User className="w-5 h-5" />
+              WordPress User Information
+            </CardTitle>
+            <CardDescription className="text-green-700">
+              Successfully authenticated with WordPress
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-green-700">Display Name</Label>
+                <p className="font-medium text-green-900">{wpUserInfo.name}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-green-700">Email</Label>
+                <p className="font-medium text-green-900">{wpUserInfo.email}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-green-700">Username</Label>
+                <p className="font-medium text-green-900">{wpUserInfo.slug}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-green-700">User ID</Label>
+                <p className="font-medium text-green-900">{wpUserInfo.id}</p>
+              </div>
+            </div>
+            {wpUserInfo.roles && wpUserInfo.roles.length > 0 && (
+              <div>
+                <Label className="text-xs text-green-700 mb-2 block">Roles & Capabilities</Label>
+                <div className="flex flex-wrap gap-2">
+                  {wpUserInfo.roles.map((role) => (
+                    <Badge key={role} variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                      {role}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {wpUserInfo.description && (
+              <div>
+                <Label className="text-xs text-green-700">Description</Label>
+                <p className="text-sm text-green-800">{wpUserInfo.description}</p>
+              </div>
+            )}
+            {wpUserInfo.url && (
+              <div>
+                <Label className="text-xs text-green-700">Website</Label>
+                <a
+                  href={wpUserInfo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-green-600 hover:underline inline-flex items-center gap-1"
+                >
+                  {wpUserInfo.url}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <Card>
