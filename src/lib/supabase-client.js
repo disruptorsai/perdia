@@ -95,6 +95,12 @@ export async function getCurrentUser() {
     return { user: null, session: null };
   }
 
+  // Validate user object has required ID
+  if (user && !user.id) {
+    console.error('User object exists but missing ID:', user);
+    return { user: null, session: null };
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
 
   return { user, session };

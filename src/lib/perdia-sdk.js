@@ -224,6 +224,12 @@ class BaseEntity {
         throw new Error('Authentication required to create records');
       }
 
+      // Validate user has a valid ID
+      if (!user.id) {
+        console.error(`[${this.tableName}] User object missing ID:`, user);
+        throw new Error('Invalid user session - user ID is missing');
+      }
+
       // Auto-add user_id if not present and table needs it
       const recordData = { ...data };
 
@@ -232,6 +238,7 @@ class BaseEntity {
       // 2. Table is not in the exclusion list
       if (!recordData.user_id && !BaseEntity.TABLES_WITHOUT_USER_ID.includes(this.tableName)) {
         recordData.user_id = user.id;
+        console.log(`[${this.tableName}] Auto-added user_id:`, user.id);
       }
 
       const { data: result, error } = await supabase
@@ -242,6 +249,7 @@ class BaseEntity {
 
       if (error) {
         console.error(`Error creating ${this.tableName}:`, error);
+        console.error(`Record data that failed:`, recordData);
         throw error;
       }
 
