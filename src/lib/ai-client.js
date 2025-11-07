@@ -133,11 +133,30 @@ export async function invokeLLM(options) {
     const functionUrl = `${supabaseUrl}/functions/v1/invoke-llm`;
 
     // Get the current session for authentication
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    console.log('[invokeLLM] Session check:', {
+      hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
+      sessionError: sessionError?.message
+    });
+
+    if (sessionError) {
+      console.error('[invokeLLM] Session error:', sessionError);
+      throw new Error(`Authentication error: ${sessionError.message}`);
+    }
 
     if (!session) {
-      throw new Error('User not authenticated. Please sign in to use AI features.');
+      console.error('[invokeLLM] No session found - user may need to re-authenticate');
+      throw new Error('Authentication required: Please refresh the page and sign in again.');
     }
+
+    if (!session.access_token) {
+      console.error('[invokeLLM] Session exists but missing access token');
+      throw new Error('Invalid session: Please refresh the page and sign in again.');
+    }
+
+    console.log('[invokeLLM] Calling Edge Function with auth token');
 
     const response = await fetch(functionUrl, {
       method: 'POST',
