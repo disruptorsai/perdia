@@ -20,6 +20,22 @@
   # Functions directory (for serverless functions)
   functions = "netlify/functions"
 
+# ============================================================================
+# FUNCTIONS CONFIGURATION
+# ============================================================================
+
+[functions]
+  # Function timeout (in seconds)
+  # Free tier: max 10 seconds
+  # Pro tier and above: max 26 seconds
+  # AI content generation can take 20-60 seconds for long articles
+  # Using 26 seconds (maximum for Pro tier)
+  node_bundler = "esbuild"
+
+[functions."invoke-llm"]
+  # Increase timeout for AI function specifically to 26 seconds
+  timeout = 26
+
 [build.environment]
   # Node version (20+ required for react-router and vite)
   NODE_VERSION = "20"
