@@ -73,20 +73,13 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
         const loadKnowledgeFiles = async () => {
             if (agent?.name) {
                 try {
-                    const agentSpecificFiles = await FileDocument.find({
-                        agent_name: agent.name
+                    // file_documents doesn't have agent_name column
+                    // Load all files from knowledge-base category
+                    const files = await FileDocument.find({
+                        category: 'knowledge-base'
                     });
 
-                    const sharedFiles = await FileDocument.find({
-                        agent_name: 'shared'
-                    });
-
-                    const allFilesMap = new Map();
-                    sharedFiles.forEach(file => allFilesMap.set(file.id, file));
-                    agentSpecificFiles.forEach(file => allFilesMap.set(file.id, file));
-
-                    const combinedFiles = Array.from(allFilesMap.values());
-                    setKnowledgeFiles(combinedFiles);
+                    setKnowledgeFiles(files || []);
 
                 } catch (error) {
                     console.error("Error loading knowledge base files:", error);
@@ -595,6 +588,16 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             </ScrollArea>
 
             <div className="border-t border-slate-200 p-4 bg-white">
+                 {/* AI Processing Indicator - More Prominent */}
+                 {isAgentThinking && (
+                    <div className="flex items-center justify-center gap-3 mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg animate-pulse">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                        <div className="flex flex-col">
+                            <p className="text-sm font-semibold text-blue-900">AI Agent is thinking...</p>
+                            <p className="text-xs text-blue-700">Generating response using {agentDisplayName}</p>
+                        </div>
+                    </div>
+                )}
                  {showSaveConfirmation && (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <p className="text-sm font-semibold text-green-800 text-center sm:text-left">Ready to save to the library?</p>

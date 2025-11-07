@@ -54,7 +54,9 @@ const DEFAULT_PROVIDER = import.meta.env.VITE_DEFAULT_AI_PROVIDER || 'claude';
  * Routes requests through Netlify serverless function for security
  *
  * @param {object} options - LLM invocation options
- * @param {string} options.prompt - The prompt to send to the LLM
+ * @param {string} [options.prompt] - Simple prompt string (for single-shot requests)
+ * @param {string} [options.systemPrompt] - System prompt (for conversation-based requests)
+ * @param {Array} [options.messages] - Message history (for conversation-based requests)
  * @param {object} [options.responseSchema] - JSON schema for structured output
  * @param {string} [options.provider='claude'] - 'claude' or 'openai'
  * @param {string} [options.model] - Specific model override
@@ -65,6 +67,8 @@ const DEFAULT_PROVIDER = import.meta.env.VITE_DEFAULT_AI_PROVIDER || 'claude';
 export async function invokeLLM(options) {
   const {
     prompt,
+    systemPrompt,
+    messages,
     responseSchema,
     provider = DEFAULT_PROVIDER,
     model,
@@ -72,8 +76,9 @@ export async function invokeLLM(options) {
     maxTokens = 4000,
   } = options;
 
-  if (!prompt) {
-    throw new Error('Prompt is required');
+  // Support both simple prompt and conversation-based messages
+  if (!prompt && !messages) {
+    throw new Error('Either prompt or messages is required');
   }
 
   try {
@@ -88,20 +93,32 @@ export async function invokeLLM(options) {
       actualModel = CLAUDE_MODELS.default;
     }
 
+    // Build request body - support both simple prompt and conversation messages
+    const requestBody = {
+      provider: provider === 'anthropic' ? 'claude' : provider,
+      model: actualModel,
+      temperature,
+      max_tokens: maxTokens,
+      response_json_schema: responseSchema,
+    };
+
+    // Add prompt OR messages + systemPrompt
+    if (messages) {
+      requestBody.messages = messages;
+      if (systemPrompt) {
+        requestBody.system_prompt = systemPrompt;
+      }
+    } else {
+      requestBody.prompt = prompt;
+    }
+
     // Call Netlify serverless function (secure - API keys on server)
     const response = await fetch('/.netlify/functions/invoke-llm', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        provider: provider === 'anthropic' ? 'claude' : provider,
-        model: actualModel,
-        prompt,
-        temperature,
-        max_tokens: maxTokens,
-        response_json_schema: responseSchema,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
