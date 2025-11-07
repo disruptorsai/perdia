@@ -142,6 +142,35 @@ class BaseEntity {
   }
 
   /**
+   * List all records with optional ordering
+   * Simplified version of find() that takes a single ordering parameter
+   * @param {string} orderBy - Column name to order by. Prefix with '-' for descending (e.g., '-created_date')
+   * @param {object} options - Query options (limit, offset)
+   * @returns {Promise<Array>}
+   */
+  async list(orderBy = '-created_date', options = {}) {
+    try {
+      // Parse orderBy parameter
+      let column = orderBy;
+      let ascending = true;
+
+      if (orderBy.startsWith('-')) {
+        column = orderBy.substring(1);
+        ascending = false;
+      }
+
+      // Call find with appropriate parameters
+      return await this.find({}, {
+        ...options,
+        orderBy: { column, ascending }
+      });
+    } catch (error) {
+      console.error(`Error in ${this.tableName}.list():`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Create new record
    * @param {object} data - Record data
    * @returns {Promise<object>}
