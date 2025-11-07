@@ -28,10 +28,10 @@
 // =====================================================
 
 const CLAUDE_MODELS = {
-  'claude-3-5-sonnet': 'claude-3-sonnet-20240229',
-  'claude-3-5-haiku': 'claude-3-haiku-20240307',
-  'claude-3-opus': 'claude-3-opus-20240229',
-  'default': 'claude-3-sonnet-20240229',
+  'claude-sonnet-4-5': 'claude-sonnet-4-5',  // Latest model, auto-updates
+  'claude-haiku-4-5': 'claude-haiku-4-5',
+  'claude-opus-4-1': 'claude-opus-4-1',
+  'default': 'claude-sonnet-4-5',  // Use latest Claude 4.5 Sonnet
 };
 
 const OPENAI_MODELS = {
