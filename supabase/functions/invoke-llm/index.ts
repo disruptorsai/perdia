@@ -1,0 +1,260 @@
+/**
+ * Supabase Edge Function: AI LLM Invocation
+ *
+ * PURPOSE: Securely handles AI API calls server-side to prevent API key exposure
+ *
+ * SUPPORTED PROVIDERS:
+ * - Anthropic Claude (primary for content generation)
+ * - OpenAI GPT (secondary for specialized tasks)
+ *
+ * TIMEOUT: 400 seconds (Supabase Pro tier) - 15x longer than Netlify
+ *
+ * SETUP:
+ * 1. Deploy: supabase functions deploy invoke-llm
+ * 2. Set secrets:
+ *    supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+ *    supabase secrets set OPENAI_API_KEY=sk-...
+ *
+ * USAGE:
+ * POST https://[project-ref].supabase.co/functions/v1/invoke-llm
+ * {
+ *   "provider": "claude",
+ *   "model": "claude-sonnet-4-5",
+ *   "messages": [...],
+ *   "system_prompt": "...",
+ *   "temperature": 0.7,
+ *   "max_tokens": 4000
+ * }
+ */
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import Anthropic from 'npm:@anthropic-ai/sdk@0.30.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface LLMRequest {
+  provider: 'claude' | 'openai' | 'anthropic';
+  model?: string;
+  prompt?: string;
+  messages?: Array<{ role: string; content: string }>;
+  system_prompt?: string;
+  temperature?: number;
+  max_tokens?: number;
+  response_json_schema?: any;
+}
+
+interface LLMResponse {
+  content: string;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  model: string;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const startTime = Date.now();
+  console.log('========================================');
+  console.log('INVOKE-LLM EDGE FUNCTION CALLED');
+  console.log('Time:', new Date().toISOString());
+  console.log('========================================');
+
+  try {
+    const body: LLMRequest = await req.json();
+    console.log('📥 Request body parsed');
+    console.log('Provider:', body.provider);
+    console.log('Model:', body.model);
+    console.log('Has messages:', !!body.messages);
+    console.log('Has prompt:', !!body.prompt);
+    console.log('Message count:', body.messages?.length);
+
+    const { provider, model, prompt, messages, system_prompt, temperature, max_tokens, response_json_schema } = body;
+
+    // Validate required fields
+    if (!provider || (!prompt && !messages)) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: provider, and either prompt or messages' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let response: LLMResponse;
+
+    // Handle Anthropic Claude API
+    if (provider === 'claude' || provider === 'anthropic') {
+      console.log('🤖 Using Claude provider');
+
+      const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+      if (!apiKey) {
+        throw new Error('ANTHROPIC_API_KEY not configured in Supabase secrets');
+      }
+
+      console.log('API Key exists:', !!apiKey);
+      console.log('API Key prefix:', apiKey.substring(0, 10) + '...');
+
+      const anthropic = new Anthropic({
+        apiKey: apiKey,
+      });
+
+      // Build messages array
+      let messagesToSend;
+      if (messages) {
+        messagesToSend = messages;
+        console.log('📝 Using message history:', messages.length, 'messages');
+      } else {
+        messagesToSend = [{ role: 'user', content: prompt! }];
+        console.log('📝 Using simple prompt');
+      }
+
+      const requestParams: any = {
+        model: model || 'claude-sonnet-4-5',
+        max_tokens: max_tokens || 4000,
+        temperature: temperature ?? 0.7,
+        messages: messagesToSend,
+      };
+
+      // Add system prompt if provided
+      if (system_prompt) {
+        requestParams.system = system_prompt;
+        console.log('📋 System prompt length:', system_prompt.length);
+      }
+
+      console.log('🚀 Calling Anthropic API...');
+      console.log('Model:', requestParams.model);
+      console.log('Max tokens:', requestParams.max_tokens);
+      console.log('Temperature:', requestParams.temperature);
+
+      const anthropicResponse = await anthropic.messages.create(requestParams);
+
+      console.log('✅ Anthropic response received');
+      console.log('Content length:', anthropicResponse.content[0].text.length);
+      console.log('Input tokens:', anthropicResponse.usage.input_tokens);
+      console.log('Output tokens:', anthropicResponse.usage.output_tokens);
+
+      response = {
+        content: anthropicResponse.content[0].text,
+        usage: {
+          input_tokens: anthropicResponse.usage.input_tokens,
+          output_tokens: anthropicResponse.usage.output_tokens,
+        },
+        model: anthropicResponse.model,
+      };
+    }
+    // Handle OpenAI API
+    else if (provider === 'openai') {
+      console.log('🤖 Using OpenAI provider');
+
+      const apiKey = Deno.env.get('OPENAI_API_KEY');
+      if (!apiKey) {
+        throw new Error('OPENAI_API_KEY not configured in Supabase secrets');
+      }
+
+      // Build messages array
+      let messagesToSend;
+      if (messages) {
+        messagesToSend = messages;
+        if (system_prompt) {
+          messagesToSend = [
+            { role: 'system', content: system_prompt },
+            ...messages
+          ];
+        }
+      } else {
+        messagesToSend = [{ role: 'user', content: prompt! }];
+        if (system_prompt) {
+          messagesToSend.unshift({ role: 'system', content: system_prompt });
+        }
+      }
+
+      const requestBody: any = {
+        model: model || 'gpt-4o',
+        messages: messagesToSend,
+        temperature: temperature ?? 0.7,
+        max_tokens: max_tokens || 4000,
+      };
+
+      if (response_json_schema) {
+        requestBody.response_format = { type: 'json_object' };
+      }
+
+      console.log('🚀 Calling OpenAI API...');
+      console.log('Model:', requestBody.model);
+
+      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!openaiResponse.ok) {
+        const errorData = await openaiResponse.json();
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const openaiData = await openaiResponse.json();
+
+      console.log('✅ OpenAI response received');
+      console.log('Content length:', openaiData.choices[0].message.content.length);
+
+      response = {
+        content: openaiData.choices[0].message.content,
+        usage: {
+          input_tokens: openaiData.usage.prompt_tokens,
+          output_tokens: openaiData.usage.completion_tokens,
+        },
+        model: openaiData.model,
+      };
+    } else {
+      return new Response(
+        JSON.stringify({ error: `Unsupported provider: ${provider}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`⏱️ Total duration: ${duration}ms`);
+    console.log('========================================');
+
+    return new Response(
+      JSON.stringify(response),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('❌❌❌ ERROR INVOKING LLM ❌❌❌');
+    console.error('Error type:', error.constructor?.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error(`⏱️ Failed after: ${duration}ms`);
+    console.error('========================================');
+
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to invoke LLM',
+        message: error.message,
+        details: error.toString(),
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

@@ -3,8 +3,11 @@
  * ============================
  * Unified AI interface supporting both Anthropic Claude and OpenAI
  *
- * SECURITY: All AI API calls are routed through Netlify serverless functions
+ * SECURITY: All AI API calls are routed through Supabase Edge Functions
  * to prevent exposing API keys to the client.
+ *
+ * PERFORMANCE: Supabase Edge Functions provide 400-second timeout (Pro tier)
+ * vs Netlify's 26-second limit, allowing full article generation without timeouts.
  *
  * This module provides a single interface for LLM operations across
  * multiple providers, maintaining client-configurable AI provider selection.
@@ -28,10 +31,11 @@
 // =====================================================
 
 const CLAUDE_MODELS = {
-  'claude-sonnet-4-5': 'claude-sonnet-4-5',  // Latest model, auto-updates
-  'claude-haiku-4-5': 'claude-haiku-4-5',
-  'claude-opus-4-1': 'claude-opus-4-1',
-  'default': 'claude-sonnet-4-5',  // Use latest Claude 4.5 Sonnet
+  'claude-3-5-sonnet-20241022': 'claude-3-5-sonnet-20241022',  // Claude 3.5 Sonnet (stable)
+  'claude-3-5-sonnet': 'claude-3-5-sonnet-20241022',  // Alias
+  'claude-3-opus': 'claude-3-opus-20240229',
+  'claude-3-haiku': 'claude-3-haiku-20240307',
+  'default': 'claude-3-5-sonnet-20241022',  // Use stable Claude 3.5 Sonnet
 };
 
 const OPENAI_MODELS = {
@@ -112,8 +116,12 @@ export async function invokeLLM(options) {
       requestBody.prompt = prompt;
     }
 
-    // Call Netlify serverless function (secure - API keys on server)
-    const response = await fetch('/.netlify/functions/invoke-llm', {
+    // Call Supabase Edge Function (secure - API keys on server)
+    // Construct function URL from Supabase project URL
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const functionUrl = `${supabaseUrl}/functions/v1/invoke-llm`;
+
+    const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

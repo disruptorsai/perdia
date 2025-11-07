@@ -40,7 +40,7 @@ export default function Dashboard() {
       const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
 
       const metricsData = await PerformanceMetric.find({
-        date: { gte: dateStr }
+        metric_date: { gte: dateStr }
       });
 
       // Calculate totals
@@ -48,7 +48,7 @@ export default function Dashboard() {
         clicks: acc.clicks + (metric.clicks || 0),
         impressions: acc.impressions + (metric.impressions || 0),
         ctr: acc.ctr + (metric.ctr || 0),
-        position: acc.position + (metric.position || 0),
+        position: acc.position + (metric.google_ranking || 0),
         count: acc.count + 1
       }), { clicks: 0, impressions: 0, ctr: 0, position: 0, count: 0 });
 
