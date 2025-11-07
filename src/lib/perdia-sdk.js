@@ -37,6 +37,12 @@ import {
  * Provides Base44-compatible CRUD operations
  */
 class BaseEntity {
+  // Tables that don't have user_id column (scoped differently)
+  static TABLES_WITHOUT_USER_ID = [
+    'agent_messages',      // Scoped by conversation_id
+    'chat_messages',       // Scoped by channel_id
+  ];
+
   constructor(tableName, schema = {}) {
     this.tableName = tableName;
     this.schema = schema;
@@ -69,7 +75,42 @@ class BaseEntity {
         if (Array.isArray(value)) {
           query = query.in(key, value);
         } else if (value !== null && value !== undefined) {
-          query = query.eq(key, value);
+          // Handle nested filter objects with operators (e.g., { gte: value })
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            Object.entries(value).forEach(([operator, operatorValue]) => {
+              switch (operator) {
+                case 'gte':
+                  query = query.gte(key, operatorValue);
+                  break;
+                case 'gt':
+                  query = query.gt(key, operatorValue);
+                  break;
+                case 'lte':
+                  query = query.lte(key, operatorValue);
+                  break;
+                case 'lt':
+                  query = query.lt(key, operatorValue);
+                  break;
+                case 'neq':
+                  query = query.neq(key, operatorValue);
+                  break;
+                case 'like':
+                  query = query.like(key, operatorValue);
+                  break;
+                case 'ilike':
+                  query = query.ilike(key, operatorValue);
+                  break;
+                case 'in':
+                  query = query.in(key, operatorValue);
+                  break;
+                default:
+                  console.warn(`Unknown operator: ${operator}`);
+              }
+            });
+          } else {
+            // Simple equality check
+            query = query.eq(key, value);
+          }
         }
       });
 
@@ -183,11 +224,15 @@ class BaseEntity {
         throw new Error('Authentication required to create records');
       }
 
-      // Auto-add user_id if not present
-      const recordData = {
-        ...data,
-        user_id: data.user_id || user.id,
-      };
+      // Auto-add user_id if not present and table needs it
+      const recordData = { ...data };
+
+      // Only add user_id if:
+      // 1. Data doesn't already have user_id
+      // 2. Table is not in the exclusion list
+      if (!recordData.user_id && !BaseEntity.TABLES_WITHOUT_USER_ID.includes(this.tableName)) {
+        recordData.user_id = user.id;
+      }
 
       const { data: result, error } = await supabase
         .from(this.tableName)
@@ -292,7 +337,42 @@ class BaseEntity {
         if (Array.isArray(value)) {
           query = query.in(key, value);
         } else if (value !== null && value !== undefined) {
-          query = query.eq(key, value);
+          // Handle nested filter objects with operators (e.g., { gte: value })
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            Object.entries(value).forEach(([operator, operatorValue]) => {
+              switch (operator) {
+                case 'gte':
+                  query = query.gte(key, operatorValue);
+                  break;
+                case 'gt':
+                  query = query.gt(key, operatorValue);
+                  break;
+                case 'lte':
+                  query = query.lte(key, operatorValue);
+                  break;
+                case 'lt':
+                  query = query.lt(key, operatorValue);
+                  break;
+                case 'neq':
+                  query = query.neq(key, operatorValue);
+                  break;
+                case 'like':
+                  query = query.like(key, operatorValue);
+                  break;
+                case 'ilike':
+                  query = query.ilike(key, operatorValue);
+                  break;
+                case 'in':
+                  query = query.in(key, operatorValue);
+                  break;
+                default:
+                  console.warn(`Unknown operator: ${operator}`);
+              }
+            });
+          } else {
+            // Simple equality check
+            query = query.eq(key, value);
+          }
         }
       });
 

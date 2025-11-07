@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrainCircuit, FileText, TrendingUp, Zap, CheckSquare, BarChart3, ArrowRight, Globe, Target, Clock, Smartphone, MousePointerClick, Eye, Search } from 'lucide-react';
-import { AutomationSettings } from '@/api/entities';
-import { Keyword } from '@/api/entities';
-import { ContentQueue } from '@/api/entities';
-import { PerformanceMetric } from '@/api/entities';
+import { AutomationSettings } from '@/lib/perdia-sdk';
+import { Keyword } from '@/lib/perdia-sdk';
+import { ContentQueue } from '@/lib/perdia-sdk';
+import { PerformanceMetric } from '@/lib/perdia-sdk';
 
 const features = [
     {

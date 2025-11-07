@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { BlogPost } from '@/api/entities';
+import { BlogPost } from '@/lib/perdia-sdk';
 import PostList from '../components/blog/PostList';
 import PostEditorModal from '../components/blog/PostEditorModal';
 import { FileText } from 'lucide-react';

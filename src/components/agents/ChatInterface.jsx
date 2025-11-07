@@ -1,16 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { agentSDK } from '@/agents';
+import { agentSDK } from '@/lib/agent-sdk';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Loader2, AlertCircle, RefreshCw, Shield } from 'lucide-react';
 import MessageBubble from './MessageBubble';
-import { Client } from '@/api/entities';
-import { BlogPost } from '@/api/entities';
-import { SocialPost } from '@/api/entities';
-import { FileDocument } from '@/api/entities';
-import { User } from '@/api/entities';
+import { Client, BlogPost, SocialPost, FileDocument } from '@/lib/perdia-sdk';
+import { getCurrentUser } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 
 const CONFIRMATION_SEPARATOR = '---|||---Ready to upload to the library?';
@@ -45,7 +42,7 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
     useEffect(() => {
         const loadUserAndData = async () => {
             try {
-                const user = await User.me();
+                const { user } = await getCurrentUser();
                 setCurrentUser(user);
                 setAuthError(false);
                 console.log('[ChatInterface] User authenticated:', user.email);
@@ -62,10 +59,9 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
     useEffect(() => {
         const loadClientData = async () => {
             try {
-                let clientInfo = await Client.list("name", 1);
-                if (clientInfo.length > 0) {
-                    setClientData(clientInfo[0]);
-                }
+                // Client table doesn't exist in Perdia - skip this
+                // This is legacy Base44 code
+                setClientData(null);
             } catch (error) {
                 console.error("Error loading client data:", error);
             }
@@ -77,18 +73,18 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
         const loadKnowledgeFiles = async () => {
             if (agent?.name) {
                 try {
-                    const agentSpecificFiles = await FileDocument.filter({ 
-                        agent_name: agent.name 
+                    const agentSpecificFiles = await FileDocument.find({
+                        agent_name: agent.name
                     });
 
-                    const sharedFiles = await FileDocument.filter({
+                    const sharedFiles = await FileDocument.find({
                         agent_name: 'shared'
                     });
 
                     const allFilesMap = new Map();
                     sharedFiles.forEach(file => allFilesMap.set(file.id, file));
                     agentSpecificFiles.forEach(file => allFilesMap.set(file.id, file));
-                    
+
                     const combinedFiles = Array.from(allFilesMap.values());
                     setKnowledgeFiles(combinedFiles);
 
@@ -110,7 +106,7 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                     setIsLoading(true);
                     setError(null);
                     setDetailedError(null);
-                    const conv = await agentSDK.getConversation(conversationId);
+                    const conv = await agentSDK.getConversation({ conversation_id: conversationId });
                     setConversation(conv);
                     setMessages(conv.messages || []);
                 } catch (error) {
@@ -137,15 +133,6 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
 
         loadConversation();
     }, [conversationId]);
-    
-    useEffect(() => {
-        if (conversation) {
-            const unsubscribe = agentSDK.subscribeToConversation(conversation.id, (data) => {
-                setMessages(data.messages || []);
-            });
-            return () => unsubscribe();
-        }
-    }, [conversation]);
 
     const saveSocialPost = async (contentToSave, originalPrompt) => {
         try {
@@ -256,33 +243,24 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
 
             console.log('[ChatInterface] Creating conversation with agent:', agent?.name);
             console.log('[ChatInterface] Current user:', currentUser.email);
-            
+
             if (!agent || !agent.name) {
                 throw new Error('No agent selected or agent has no name');
             }
 
-            const simpleTitle = firstMessage.length > 50 
-                ? firstMessage.substring(0, 50) + '...' 
-                : firstMessage;
+            console.log('[ChatInterface] Creating conversation for first message');
 
-            console.log('[ChatInterface] Creating conversation with data:', {
-                agent_name: agent.name,
-                metadata: { name: simpleTitle }
-            });
-
+            // Create conversation without initial_message - we'll send it separately
             const newConv = await agentSDK.createConversation({
-                agent_name: agent.name,
-                metadata: {
-                    name: simpleTitle,
-                }
+                agent_name: agent.name
             });
-            
+
             console.log('[ChatInterface] Conversation created successfully:', newConv);
-            
+
             if (onConversationCreated) {
                 onConversationCreated(newConv);
             }
-            
+
             setConversation(newConv);
             setMessages(newConv.messages || []);
             return newConv;
@@ -364,12 +342,19 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                 console.log('[ChatInterface] New conversation created:', currentConversation.id);
             }
 
-            console.log('[ChatInterface] Adding message to conversation:', currentConversation.id);
-            await agentSDK.addMessage(currentConversation, {
-                role: 'user',
-                content: contentToSend,
+            console.log('[ChatInterface] Sending message to conversation:', currentConversation.id);
+            const response = await agentSDK.sendMessage({
+                conversation_id: currentConversation.id,
+                message: contentToSend
             });
-            console.log('[ChatInterface] Message added successfully');
+            console.log('[ChatInterface] Message sent successfully, received response');
+
+            // Update messages with the new user and assistant messages
+            setMessages(prev => [
+                ...prev,
+                response.user_message,
+                response.assistant_message
+            ]);
             
         } catch (error) {
             console.error("[ChatInterface] Error sending message:", error);

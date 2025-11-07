@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { agentSDK } from '@/agents';
+import { agentSDK } from '@/lib/agent-sdk';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrainCircuit, MessageSquare, Files, BookOpen, Star } from 'lucide-react';
 import ChatInterface from '../components/agents/ChatInterface';
@@ -9,7 +9,7 @@ import TrainingInterface from '../components/agents/TrainingInterface';
 import FeedbackLoop from '../components/agents/FeedbackLoop';
 import ChatHistoryPanel from '../components/agents/ChatHistoryPanel';
 import { toast } from 'sonner';
-import { User } from '@/api/entities';
+import { getCurrentUser } from '@/lib/supabase-client';
 
 const DELETED_CONVOS_KEY = 'deleted_conversation_ids';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { WordPressConnection } from '@/api/entities';
+import { WordPressConnection } from '@/lib/perdia-sdk';
 import { WordPressClient } from '@/lib/wordpress-client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

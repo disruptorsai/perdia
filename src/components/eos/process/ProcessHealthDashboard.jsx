@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EOSProcess } from '@/api/entities';
-import { EOSProcessImprovement } from '@/api/entities';
+import { EOSProcess } from '@/lib/perdia-sdk';
+import { EOSProcessImprovement } from '@/lib/perdia-sdk';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Settings, FileText, TrendingUp, AlertTriangle, CheckCircle, Clock } from 'lucide-react';

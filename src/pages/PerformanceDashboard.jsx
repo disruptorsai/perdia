@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Eye, MousePointerClick, Target } from 'lucide-react';
-import { PerformanceMetric } from '@/api/entities';
+import { PerformanceMetric } from '@/lib/perdia-sdk';
 
 export default function PerformanceDashboard() {
   const [metrics, setMetrics] = useState([]);

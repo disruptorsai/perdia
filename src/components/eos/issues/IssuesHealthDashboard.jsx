@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EOSIssue } from '@/api/entities';
+import { EOSIssue } from '@/lib/perdia-sdk';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Clock, TrendingUp, Users, Calendar, Target } from 'lucide-react';

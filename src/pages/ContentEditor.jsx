@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Save, Upload, ArrowLeft, ExternalLink, Check } from 'lucide-react';
-import { ContentQueue, WordPressConnection } from '@/api/entities';
+import { ContentQueue, WordPressConnection } from '@/lib/perdia-sdk';
 import { WordPressClient } from '@/lib/wordpress-client';
 import { toast } from 'sonner';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Keyword, ContentQueue } from '@/api/entities';
+import { Keyword, ContentQueue } from '@/lib/perdia-sdk';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

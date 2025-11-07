@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { EOSScorecardMetric, EOSScorecardEntry } from '@/api/entities';
+import { EOSScorecardMetric, EOSScorecardEntry } from '@/lib/perdia-sdk';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

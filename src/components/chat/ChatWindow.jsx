@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage } from '@/api/entities';
-import { ChatChannel } from '@/api/entities';
+import { ChatMessage } from '@/lib/perdia-sdk';
+import { ChatChannel } from '@/lib/perdia-sdk';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageBubble from './ChatMessageBubble';
 import ChatInput from './ChatInput';

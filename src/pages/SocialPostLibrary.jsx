@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { SocialPost } from '@/api/entities';
+import { SocialPost } from '@/lib/perdia-sdk';
 import { Share2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import SocialPostList from '../components/social/SocialPostList';

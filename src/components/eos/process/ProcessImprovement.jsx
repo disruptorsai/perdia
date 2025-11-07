@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EOSProcessImprovement } from '@/api/entities';
-import { EOSProcess } from '@/api/entities';
+import { EOSProcessImprovement } from '@/lib/perdia-sdk';
+import { EOSProcess } from '@/lib/perdia-sdk';
 import { Plus, TrendingUp, Lightbulb, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ProcessImprovementForm from './ProcessImprovementForm';

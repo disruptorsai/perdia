@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Building2, User as UserIcon, Hash, Lock, Loader2, ChevronsUpDown, MessageSquare } from 'lucide-react';
-import { ChatChannel } from '@/api/entities';
+import { ChatChannel } from '@/lib/perdia-sdk';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

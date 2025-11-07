@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EOSPersonAssessment } from '@/api/entities';
-import { EOSAccountabilitySeat } from '@/api/entities';
+import { EOSPersonAssessment } from '@/lib/perdia-sdk';
+import { EOSAccountabilitySeat } from '@/lib/perdia-sdk';
 import { Users, UserCheck, AlertTriangle, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import PersonAssessmentForm from './PersonAssessmentForm';

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EOSIssue } from '@/api/entities';
+import { EOSIssue } from '@/lib/perdia-sdk';
 import { Plus, Search, AlertTriangle, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import IssueForm from './IssueForm';

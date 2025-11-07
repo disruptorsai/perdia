@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ContentQueue } from '@/api/entities';
+import { ContentQueue } from '@/lib/perdia-sdk';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { BlogPost } from '@/api/entities';
-import { SocialPost } from '@/api/entities';
+import { BlogPost } from '@/lib/perdia-sdk';
+import { SocialPost } from '@/lib/perdia-sdk';
 import CalendarView from '../components/blog/CalendarView';
 import PostEditorModal from '../components/blog/PostEditorModal';
 import { useToast } from "@/components/ui/use-toast";

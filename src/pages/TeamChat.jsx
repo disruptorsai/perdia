@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { User } from '@/api/entities';
-import { ChatChannel } from '@/api/entities';
+import { User } from '@/lib/perdia-sdk';
+import { ChatChannel } from '@/lib/perdia-sdk';
 import ChatSidebar from '../components/chat/ChatSidebar';
 import ChatWindow from '../components/chat/ChatWindow';
 import CreateChannelModal from '../components/chat/CreateChannelModal';

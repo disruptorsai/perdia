@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { WordPressConnection } from '@/api/entities';
-import { ContentQueue } from '@/api/entities';
+import { WordPressConnection } from '@/lib/perdia-sdk';
+import { ContentQueue } from '@/lib/perdia-sdk';
 import { Loader2, Upload, CheckCircle, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useClient } from '@/components/contexts/ClientContext';
-import { Project } from '@/api/entities';
-import { Task } from '@/api/entities';
-import { TimeEntry } from '@/api/entities';
+import { Project } from '@/lib/perdia-sdk';
+import { Task } from '@/lib/perdia-sdk';
+import { TimeEntry } from '@/lib/perdia-sdk';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

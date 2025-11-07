@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, PenSquare, Save } from 'lucide-react';
 import { InvokeLLM } from '@/api/integrations';
-import { BlogPost } from '@/api/entities';
+import { BlogPost } from '@/lib/perdia-sdk';
 import { useToast } from "@/components/ui/use-toast";
 
 export default function ArticleGenerator({ client, selectedTitle, keywords, onArticleSaved }) {
