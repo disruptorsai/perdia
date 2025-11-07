@@ -13,8 +13,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 export const handler = async (event) => {
+  console.log('========================================');
+  console.log('INVOKE-LLM FUNCTION CALLED');
+  console.log('Time:', new Date().toISOString());
+  console.log('========================================');
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
+    console.log('❌ Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Method not allowed' }),
@@ -23,6 +29,13 @@ export const handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
+    console.log('📥 Request body parsed');
+    console.log('Provider:', body.provider);
+    console.log('Model:', body.model);
+    console.log('Has messages:', !!body.messages);
+    console.log('Has prompt:', !!body.prompt);
+    console.log('Message count:', body.messages?.length);
+
     const { provider, model, prompt, messages, system_prompt, temperature, max_tokens, response_json_schema } = body;
 
     // Validate required fields - support both simple prompt and conversation messages
@@ -37,6 +50,10 @@ export const handler = async (event) => {
 
     // Handle Claude API
     if (provider === 'claude') {
+      console.log('🤖 Using Claude provider');
+      console.log('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
+      console.log('API Key prefix:', process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...');
+
       const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY, // Server-side env var (no VITE_ prefix)
       });
@@ -46,9 +63,11 @@ export const handler = async (event) => {
       if (messages) {
         // Conversation mode with message history
         messagesToSend = messages;
+        console.log('📝 Using message history:', messages.length, 'messages');
       } else {
         // Simple prompt mode
         messagesToSend = [{ role: 'user', content: prompt }];
+        console.log('📝 Using simple prompt');
       }
 
       const requestParams = {
@@ -61,9 +80,20 @@ export const handler = async (event) => {
       // Add system prompt if provided
       if (system_prompt) {
         requestParams.system = system_prompt;
+        console.log('📋 System prompt length:', system_prompt.length);
       }
 
+      console.log('🚀 Calling Anthropic API...');
+      console.log('Model:', requestParams.model);
+      console.log('Max tokens:', requestParams.max_tokens);
+      console.log('Temperature:', requestParams.temperature);
+
       const anthropicResponse = await anthropic.messages.create(requestParams);
+
+      console.log('✅ Anthropic response received');
+      console.log('Content length:', anthropicResponse.content[0].text.length);
+      console.log('Input tokens:', anthropicResponse.usage.input_tokens);
+      console.log('Output tokens:', anthropicResponse.usage.output_tokens);
 
       response = {
         content: anthropicResponse.content[0].text,
@@ -134,7 +164,13 @@ export const handler = async (event) => {
       body: JSON.stringify(response),
     };
   } catch (error) {
-    console.error('Error invoking LLM:', error);
+    console.error('❌❌❌ ERROR INVOKING LLM ❌❌❌');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error status:', error.status);
+    console.error('Error response:', error.error);
+    console.error('Full error:', JSON.stringify(error, null, 2));
+    console.error('Stack trace:', error.stack);
 
     return {
       statusCode: 500,
@@ -144,6 +180,8 @@ export const handler = async (event) => {
       body: JSON.stringify({
         error: 'Failed to invoke LLM',
         message: error.message,
+        status: error.status,
+        details: error.error,
       }),
     };
   }
