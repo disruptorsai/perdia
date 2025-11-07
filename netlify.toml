@@ -29,7 +29,11 @@
   # The scanner is incorrectly flagging env var NAMES (not values) in code and docs as secrets
   # VITE_ prefixed vars are intentionally client-side (VITE_SUPABASE_ANON_KEY is public)
   # Excluding all source/config files since they only contain var references, not actual secrets
-  SECRETS_SCAN_OMIT_PATHS = ".env.example,.claude/**/*,docs/**/*,base44-exports/**/*,dist/**/*,*.md,.gitignore,netlify.toml,vite.config.js,scripts/**/*,supabase/**/*,src/**/*,netlify/functions/**/*"
+  SECRETS_SCAN_OMIT_PATHS = ".env.example,.claude/**/*,.netlify/**/*,docs/**/*,base44-exports/**/*,dist/**/*,*.md,.gitignore,netlify.toml,vite.config.js,scripts/**/*,supabase/**/*,src/**/*,netlify/functions/**/*,netlify/edge-functions/**/*"
+
+  # Omit non-secret environment variables from scanning
+  # NODE_ENV is a standard variable containing "production", "development", etc - not a secret
+  SECRETS_SCAN_OMIT_KEYS = "NODE_ENV"
 
 # ============================================================================
 # REDIRECT RULES
