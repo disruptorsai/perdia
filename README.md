@@ -153,6 +153,9 @@ npm run dev
 | Document | Description |
 |----------|-------------|
 | [Setup Guide](docs/SETUP_GUIDE.md) | Complete setup instructions |
+| [Anthropic API Guide](docs/ANTHROPIC_API_GUIDE.md) | **⚠️ CRITICAL: Complete Claude API reference** |
+| [Anthropic Migration Checklist](docs/ANTHROPIC_MIGRATION_CHECKLIST.md) | Claude 4.5 migration guide |
+| [CLAUDE.md](CLAUDE.md) | Claude Code assistant instructions |
 | [Migration Complete](docs/PERDIA_MIGRATION_COMPLETE.md) | Full migration report |
 | [Migration Analysis](docs/BASE44_PERDIA_MIGRATION_ANALYSIS.md) | Base44 analysis |
 | [Software Specs](docs/perdia%20Software%20Specifications.md) | Original requirements |

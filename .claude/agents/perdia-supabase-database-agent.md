@@ -333,7 +333,7 @@ CREATE TABLE agent_definitions (
     display_name TEXT NOT NULL,
     description TEXT NOT NULL,
     system_prompt TEXT NOT NULL,
-    model TEXT NOT NULL DEFAULT 'claude-3-5-sonnet-20241022',
+    model TEXT NOT NULL DEFAULT 'claude-sonnet-4-5-20250929',  -- Claude Sonnet 4.5 (current model)
     provider TEXT NOT NULL DEFAULT 'claude' CHECK (provider IN ('claude', 'openai')),
     temperature DECIMAL(2,1) DEFAULT 0.7,
     max_tokens INTEGER DEFAULT 4000,

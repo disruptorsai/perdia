@@ -550,7 +550,10 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 
 const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY
+  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+  defaultHeaders: {
+    'anthropic-version': '2023-06-01'  // REQUIRED - Current API version
+  }
 })
 
 const openai = new OpenAI({

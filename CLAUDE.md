@@ -210,14 +210,33 @@ const myClient = createClient(url, key);
 
 Unified interface supporting both Claude and OpenAI with a single `invokeLLM()` function.
 
+**⚠️ CRITICAL: Current Claude Models (2025)**
+
+**ALWAYS use these model IDs:**
+- ✅ `claude-sonnet-4-5-20250929` - PRIMARY model for content generation (Sonnet 4.5)
+- ✅ `claude-haiku-4-5-20251001` - Fast model for simple tasks (Haiku 4.5)
+- ✅ `claude-opus-4-1-20250805` - Advanced reasoning only (Opus 4.1)
+
+**NEVER use these deprecated models:**
+- ❌ `claude-3-5-sonnet-20241022` (OLD - deprecated)
+- ❌ `claude-3-opus-20240229` (OLD - deprecated)
+- ❌ `claude-3-haiku-20240307` (OLD - deprecated)
+
+**📖 See `docs/ANTHROPIC_API_GUIDE.md` for comprehensive Claude API documentation, including:**
+- Model specifications and pricing
+- Rate limit handling and exponential backoff
+- Prompt caching strategies (90% cost savings)
+- Error handling patterns
+- Migration guide from old models
+
 ```javascript
 import { InvokeLLM } from '@/lib/perdia-sdk';
 
-// Use Claude (default/primary)
+// Use Claude Sonnet 4.5 (default/primary) - CORRECT MODEL
 const response = await InvokeLLM({
   prompt: 'Write an SEO article about...',
   provider: 'claude',
-  model: 'claude-sonnet-4-5',
+  model: 'claude-sonnet-4-5-20250929',  // Use exact model ID
   temperature: 0.7,
   max_tokens: 4000
 });
@@ -243,18 +262,33 @@ const response = await InvokeLLM({
 });
 ```
 
-**9 Specialized AI Agents** (in database):
-1. `seo_content_writer` - SEO articles (1500-2500 words)
-2. `blog_post_generator` - Blog posts (800-1200 words)
-3. `page_optimizer` - Optimize existing pages
-4. `meta_description_writer` - Meta descriptions (155 chars)
-5. `social_media_specialist` - Social posts (280 chars)
-6. `keyword_researcher` - Keyword analysis
-7. `content_editor` - Review/improve content
-8. `internal_linking_expert` - Strategic internal links
-9. `content_strategist` - Content strategy
+**Model Selection Guidelines:**
+- **SEO Content Generation (1500-3000 words):** Use Sonnet 4.5 (high quality, balanced cost)
+- **Keyword Research & Analysis:** Use Sonnet 4.5 (complex reasoning)
+- **Meta Descriptions & Titles:** Use Haiku 4.5 (fast, cost-effective)
+- **Content Optimization:** Use Sonnet 4.5 (detailed analysis)
+- **Chat/Quick Responses:** Use Haiku 4.5 (low latency)
 
-All use `claude-sonnet-4-5` (Claude Sonnet 4.5 - latest model as of Nov 2025) by default with temperature 0.7.
+**9 Specialized AI Agents** (in database):
+1. `seo_content_writer` - SEO articles (1500-2500 words) - Sonnet 4.5
+2. `blog_post_generator` - Blog posts (800-1200 words) - Sonnet 4.5
+3. `page_optimizer` - Optimize existing pages - Sonnet 4.5
+4. `meta_description_writer` - Meta descriptions (155 chars) - Haiku 4.5
+5. `social_media_specialist` - Social posts (280 chars) - Haiku 4.5
+6. `keyword_researcher` - Keyword analysis - Sonnet 4.5
+7. `content_editor` - Review/improve content - Sonnet 4.5
+8. `internal_linking_expert` - Strategic internal links - Sonnet 4.5
+9. `content_strategist` - Content strategy - Sonnet 4.5
+
+**Default Configuration:** Sonnet 4.5 (`claude-sonnet-4-5-20250929`) with temperature 0.7.
+
+**Best Practices:**
+- Always use exact model IDs (not aliases)
+- Set appropriate `max_tokens` for each use case (don't default to 4000)
+- Implement exponential backoff for rate limit handling (see guide)
+- Use prompt caching for system prompts to reduce costs by 90%
+- Monitor token usage via response.usage
+- Reference `docs/ANTHROPIC_API_GUIDE.md` for detailed implementation patterns
 
 ### 5. Agent Conversation System
 
@@ -831,6 +865,7 @@ VITE_DEBUG=true npm run dev
 - `README.md` - Project overview and quick start
 - `ARCHITECTURE_GUIDE.md` - Detailed architecture patterns
 - `docs/PERDIA_MIGRATION_COMPLETE.md` - Full migration report
+- `docs/ANTHROPIC_API_GUIDE.md` - **⚠️ CRITICAL: Comprehensive Anthropic Claude API reference**
 - `.env.example` - Environment variables reference
 
 **Migration Context:**
@@ -840,7 +875,10 @@ VITE_DEBUG=true npm run dev
 
 **External Resources:**
 - [Supabase Docs](https://supabase.com/docs)
-- [Anthropic Claude API](https://docs.anthropic.com/)
+- [Anthropic Claude API Official Docs](https://docs.claude.com/) - Updated URL (docs.claude.com)
+- [Claude Messages API Reference](https://docs.claude.com/en/api/messages)
+- [Claude Rate Limits](https://docs.claude.com/en/api/rate-limits)
+- [Anthropic Console](https://console.anthropic.com/) - API keys and usage monitoring
 - [OpenAI API](https://platform.openai.com/docs)
 - [React Router v7](https://reactrouter.com/)
 - [Radix UI](https://www.radix-ui.com/)
@@ -848,7 +886,9 @@ VITE_DEBUG=true npm run dev
 
 ---
 
-**Last Updated:** 2025-01-06
-**Version:** 1.0.0
+**Last Updated:** 2025-01-07
+**Version:** 1.1.0
 **Status:** ✅ Post-Migration - SDK Layer Complete, UI Development In Progress
 **Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
+
+**⚠️ IMPORTANT:** Always reference `docs/ANTHROPIC_API_GUIDE.md` for Claude API implementation details to ensure correct model usage, rate limit handling, and cost optimization.

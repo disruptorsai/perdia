@@ -56,6 +56,9 @@ export const handler = async (event) => {
 
       const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY, // Server-side env var (no VITE_ prefix)
+        defaultHeaders: {
+          'anthropic-version': '2023-06-01'  // REQUIRED - Current API version
+        }
       });
 
       // Build messages array - support both simple prompt and conversation messages
@@ -71,7 +74,7 @@ export const handler = async (event) => {
       }
 
       const requestParams = {
-        model: model || 'claude-sonnet-4-5',  // Claude 4.5 Sonnet (latest)
+        model: model || 'claude-sonnet-4-5-20250929',  // Claude Sonnet 4.5 (PRIMARY)
         max_tokens: max_tokens || 4000,
         temperature: temperature || 0.7,
         messages: messagesToSend,

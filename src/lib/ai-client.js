@@ -31,11 +31,20 @@
 // =====================================================
 
 const CLAUDE_MODELS = {
-  'claude-3-5-sonnet-20241022': 'claude-3-5-sonnet-20241022',  // Claude 3.5 Sonnet (stable)
-  'claude-3-5-sonnet': 'claude-3-5-sonnet-20241022',  // Alias
-  'claude-3-opus': 'claude-3-opus-20240229',
-  'claude-3-haiku': 'claude-3-haiku-20240307',
-  'default': 'claude-3-5-sonnet-20241022',  // Use stable Claude 3.5 Sonnet
+  // Current models (January 2025)
+  'claude-sonnet-4-5-20250929': 'claude-sonnet-4-5-20250929',  // Claude Sonnet 4.5 (PRIMARY)
+  'claude-haiku-4-5-20251001': 'claude-haiku-4-5-20251001',    // Claude Haiku 4.5 (fast)
+  'claude-opus-4-1-20250805': 'claude-opus-4-1-20250805',      // Claude Opus 4.1 (advanced)
+
+  // Convenient aliases
+  'claude-sonnet-4.5': 'claude-sonnet-4-5-20250929',
+  'claude-haiku-4.5': 'claude-haiku-4-5-20251001',
+  'claude-opus-4.1': 'claude-opus-4-1-20250805',
+  'claude-sonnet': 'claude-sonnet-4-5-20250929',
+  'claude-haiku': 'claude-haiku-4-5-20251001',
+  'claude-opus': 'claude-opus-4-1-20250805',
+
+  'default': 'claude-sonnet-4-5-20250929',  // PRIMARY MODEL - Claude Sonnet 4.5
 };
 
 const OPENAI_MODELS = {

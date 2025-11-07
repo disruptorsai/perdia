@@ -396,26 +396,37 @@ ANTHROPIC_API_KEY=sk-ant-...          # SERVER-SIDE ONLY
 
 ---
 
-## 🐛 Known Issues (RESOLVED)
+## 🐛 Known Issues & Status
 
-### ~~Issue: Claude 3.5 Model Deprecated~~
-**Status:** ✅ FIXED (Nov 7, 2025)
+### Issue: Claude Model Version Update Required
+**Status:** ⚠️ NEEDS MIGRATION (Jan 7, 2025)
 
 **Problem:**
-- All agents were using `claude-3-5-sonnet-20241022`
-- Anthropic deprecated ALL Claude 3.5 models on Oct 29, 2025
-- API was returning 404 errors
-- Zero assistant responses were being saved
+- Codebase still uses deprecated `claude-3-5-sonnet-20241022` model
+- Anthropic has released Claude Sonnet 4.5 as the current model
+- Old models will eventually be fully deprecated
+
+**Current Model Status:**
+- ❌ **Using:** `claude-3-5-sonnet-20241022` (OLD - deprecated)
+- ✅ **Should Use:** `claude-sonnet-4-5-20250929` (Claude Sonnet 4.5 - current)
+
+**Files Requiring Updates:**
+1. `src/lib/ai-client.js` (line 31-36) - Model constants
+2. `netlify/functions/invoke-llm.js` (line 74) - Default model
+3. `scripts/seed-agents.js` - All agent definitions
+4. Database - Re-seed with `npm run db:seed`
 
 **Solution:**
-- Updated all agents to `claude-sonnet-4-5` (Claude 4.5 Sonnet)
-- Re-seeded database with new model IDs
-- Deployed to production
+See comprehensive migration guide:
+- **Complete Guide:** `docs/ANTHROPIC_API_GUIDE.md`
+- **Migration Checklist:** `docs/ANTHROPIC_MIGRATION_CHECKLIST.md`
+- **Updated Instructions:** `CLAUDE.md` (AI Integration section)
 
-**Result:**
-- ✅ AI agents now responding correctly
-- ✅ Responses being saved to database
-- ✅ Using latest and most capable Claude model
+**Benefits of Migration:**
+- ✅ Latest Claude 4.5 model (more capable)
+- ✅ Prompt caching support (90% cost savings)
+- ✅ Better rate limit handling
+- ✅ Future-proof implementation
 
 ---
 
