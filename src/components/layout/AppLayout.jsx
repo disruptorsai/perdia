@@ -10,10 +10,7 @@ import {
   Globe,
   User,
   Menu,
-  BookOpen,
-  Share2,
-  Calendar,
-  MessageSquare
+  BookOpen
 } from 'lucide-react';
 import {
   Sidebar,
@@ -61,23 +58,6 @@ const navigationItems = [
     title: 'Blog Library',
     url: '/blog',
     icon: BookOpen,
-  },
-  {
-    title: 'Social Posts',
-    url: '/social',
-    icon: Share2,
-    comingSoon: true,
-  },
-  {
-    title: 'Content Calendar',
-    url: '/calendar',
-    icon: Calendar,
-    comingSoon: true,
-  },
-  {
-    title: 'Team Chat',
-    url: '/chat',
-    icon: MessageSquare,
   },
   {
     title: 'Automation Controls',
