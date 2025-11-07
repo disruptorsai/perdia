@@ -542,77 +542,98 @@ function KeywordsPage() {
 
 ## 🔌 AI Integration Pattern
 
-### Centralized AI Client
+### Supabase Edge Functions Architecture
 
+**AI invocation runs on Supabase Edge Functions** (400-second timeout) instead of Netlify Functions (26-second timeout).
+
+**Frontend Client** (`src/lib/ai-client.js`):
 ```javascript
-// src/lib/ai-client.js
-import Anthropic from '@anthropic-ai/sdk'
-import OpenAI from 'openai'
+// Calls Supabase Edge Function endpoint
+import { supabase } from '@/lib/supabase-client';
 
-const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  defaultHeaders: {
-    'anthropic-version': '2023-06-01'  // REQUIRED - Current API version
-  }
-})
+export async function invokeLLM(params) {
+  const { data, error } = await supabase.functions.invoke('invoke-llm', {
+    body: params
+  });
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY
-})
-
-export const AI = {
-  // Claude for content generation
-  generateContent: async (prompt, options = {}) => {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: options.maxTokens || 4096,
-      messages: [{ role: 'user', content: prompt }]
-    })
-
-    return message.content[0].text
-  },
-
-  // Claude for structured output
-  generateJSON: async (prompt, schema) => {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
-    })
-
-    return JSON.parse(message.content[0].text)
-  },
-
-  // OpenAI for specialized tasks (NOT DALL-E - use gpt-image-1)
-  generateWithOpenAI: async (prompt) => {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [{ role: 'user', content: prompt }]
-    })
-
-    return completion.choices[0].message.content
-  },
-
-  // Image generation (ONLY gpt-image-1, NEVER DALL-E)
-  generateImage: async (prompt) => {
-    // Use gpt-image-1 model ONLY
-    const response = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: prompt,
-      size: '1024x1024',
-      quality: 'standard',
-      n: 1
-    })
-
-    return response.data[0].url
-  }
+  if (error) throw error;
+  return data;
 }
-
-export default AI
 ```
 
-**CRITICAL**: Never use DALL-E models. Always use `gpt-image-1` for image generation.
+**Backend Edge Function** (`supabase/functions/invoke-llm/index.ts`):
+```typescript
+import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
+
+Deno.serve(async (req) => {
+  const { provider, model, messages, system_prompt, temperature, max_tokens } = await req.json();
+
+  if (provider === 'claude') {
+    const anthropic = new Anthropic({
+      apiKey: Deno.env.get('ANTHROPIC_API_KEY')
+    });
+
+    const response = await anthropic.messages.create({
+      model: model || 'claude-sonnet-4-5-20250929',
+      max_tokens: max_tokens || 4000,
+      temperature: temperature || 0.7,
+      system: system_prompt,
+      messages
+    });
+
+    return new Response(JSON.stringify({
+      content: response.content[0].text,
+      model: response.model,
+      usage: response.usage
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (provider === 'openai') {
+    const openai = new OpenAI({
+      apiKey: Deno.env.get('OPENAI_API_KEY')
+    });
+
+    const response = await openai.chat.completions.create({
+      model: model || 'gpt-4o',
+      messages,
+      temperature: temperature || 0.7,
+      max_tokens: max_tokens || 4000
+    });
+
+    return new Response(JSON.stringify({
+      content: response.choices[0].message.content,
+      model: response.model,
+      usage: response.usage
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+});
+```
+
+**Benefits:**
+- ✅ **400-second timeout** (vs 26s on Netlify) - supports long-form content generation
+- ✅ **No more 504 errors** on 2000+ word articles
+- ✅ **Consolidated infrastructure** - all backend on Supabase ($25/mo vs $44/mo)
+- ✅ **Secure** - API keys in Supabase secrets, not environment variables
+
+**Deployment:**
+```bash
+# Deploy Edge Function
+npx supabase functions deploy invoke-llm --project-ref yvvtsfgryweqfppilkvo
+
+# Set secrets
+npx supabase secrets set ANTHROPIC_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+npx supabase secrets set OPENAI_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+
+# Test
+node scripts/test-invoke-llm.js
+```
+
+See [SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md](./SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md) for complete deployment guide.
 
 ---
 
@@ -667,7 +688,12 @@ try {
 
 ## 🚀 Deployment Patterns
 
-### Netlify Project Information
+### Hybrid Deployment Architecture
+
+**Frontend:** Netlify (static hosting)
+**Backend & AI:** Supabase (database, auth, storage, edge functions)
+
+### Frontend Deployment (Netlify)
 
 **Current Deployment:**
 - **Project ID:** `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
@@ -748,6 +774,52 @@ netlify env:set VARIABLE_NAME value
 netlify open:site
 netlify open:admin
 ```
+
+### Backend & AI Deployment (Supabase Edge Functions)
+
+**AI invocation runs on Supabase Edge Functions** with 400-second timeout for long-form content generation.
+
+**Project Information:**
+- **Project Ref:** `yvvtsfgryweqfppilkvo`
+- **URL:** https://yvvtsfgryweqfppilkvo.supabase.co
+- **Function:** `invoke-llm`
+- **Timeout:** 400 seconds (vs 26s on Netlify)
+- **Dashboard:** https://supabase.com/dashboard/project/yvvtsfgryweqfppilkvo/functions
+
+**Deployment Steps:**
+
+```bash
+# 1. Link to Supabase project
+npx supabase link --project-ref yvvtsfgryweqfppilkvo
+
+# 2. Deploy the Edge Function
+npx supabase functions deploy invoke-llm --project-ref yvvtsfgryweqfppilkvo
+
+# 3. Set API key secrets
+npx supabase secrets set ANTHROPIC_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+npx supabase secrets set OPENAI_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+
+# 4. Verify deployment
+npx supabase secrets list --project-ref yvvtsfgryweqfppilkvo
+node scripts/test-invoke-llm.js
+```
+
+**Edge Function Logs:**
+```bash
+# View real-time logs
+npx supabase functions logs invoke-llm --project-ref yvvtsfgryweqfppilkvo
+
+# List all functions
+npx supabase functions list --project-ref yvvtsfgryweqfppilkvo
+```
+
+**Benefits:**
+- ✅ **400-second timeout** - no more 504 errors on long content
+- ✅ **Consolidated infrastructure** - all backend on Supabase
+- ✅ **Cost savings** - $25/mo vs $44/mo (Netlify + Supabase)
+- ✅ **Secure** - API keys in Supabase secrets
+
+See [SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md](./SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md) for detailed deployment guide.
 
 ---
 

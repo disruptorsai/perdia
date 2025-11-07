@@ -61,9 +61,9 @@ Perdia Education is a sophisticated AI-powered SEO content automation platform d
 ### Technology Stack
 
 - **Frontend:** React 18.2, Vite 6.1, TailwindCSS 3.4
-- **Backend:** Supabase (PostgreSQL + Auth + Storage)
-- **AI:** Anthropic Claude + OpenAI
-- **Deployment:** Netlify
+- **Backend:** Supabase (PostgreSQL + Auth + Storage + Edge Functions)
+- **AI:** Anthropic Claude + OpenAI (via Supabase Edge Functions)
+- **Deployment:** Netlify (Frontend) + Supabase (Backend & AI)
 - **Components:** Radix UI, Recharts, Framer Motion
 
 ### Project Structure
@@ -71,7 +71,7 @@ Perdia Education is a sophisticated AI-powered SEO content automation platform d
 ```
 perdia/
 ├── src/
-│   ├── lib/                    # Core libraries (NEW)
+│   ├── lib/                    # Core libraries
 │   │   ├── supabase-client.js  # Centralized Supabase client
 │   │   ├── perdia-sdk.js       # Custom SDK (Base44-compatible)
 │   │   ├── ai-client.js        # AI integration layer
@@ -80,10 +80,12 @@ perdia/
 │   ├── pages/                  # Route components (13 pages)
 │   └── ...
 ├── supabase/
+│   ├── functions/              # Supabase Edge Functions
+│   │   └── invoke-llm/         # AI invocation endpoint (400s timeout)
 │   └── migrations/             # Database schema
 ├── scripts/                    # Setup and utility scripts
 ├── docs/                       # Documentation
-└── netlify.toml                # Deployment config
+└── netlify.toml                # Frontend deployment config
 ```
 
 ---
@@ -215,6 +217,37 @@ netlify open:admin           # Open Netlify dashboard
 
 See [netlify.toml](netlify.toml) for complete configuration.
 
+### Deploy Supabase Edge Function
+
+The AI invocation endpoint runs on Supabase Edge Functions (400-second timeout for long-form content generation).
+
+**1. Link to Supabase Project:**
+```bash
+npx supabase link --project-ref yvvtsfgryweqfppilkvo
+```
+
+**2. Deploy the Function:**
+```bash
+npx supabase functions deploy invoke-llm --project-ref yvvtsfgryweqfppilkvo
+```
+
+**3. Configure Secrets:**
+```bash
+npx supabase secrets set ANTHROPIC_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+npx supabase secrets set OPENAI_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+```
+
+**4. Verify Deployment:**
+```bash
+# List secrets
+npx supabase secrets list --project-ref yvvtsfgryweqfppilkvo
+
+# Test function
+node scripts/test-invoke-llm.js
+```
+
+See [SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md](./SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md) for detailed deployment guide.
+
 ---
 
 ## 🏛️ Migration Status
@@ -223,10 +256,17 @@ See [netlify.toml](netlify.toml) for complete configuration.
 
 - ✅ **Database:** 16 tables with RLS policies
 - ✅ **SDK Layer:** Custom Base44-compatible API
-- ✅ **AI Integration:** Direct Claude + OpenAI
+- ✅ **AI Integration:** Supabase Edge Functions (400s timeout)
 - ✅ **Agent System:** Custom conversation management
 - ✅ **Storage:** Supabase Storage (4 buckets)
-- ✅ **Deployment:** Netlify ready
+- ✅ **Deployment:** Netlify (frontend) + Supabase (backend/AI)
+
+### Infrastructure Consolidation (Nov 2025) ✅
+
+- ✅ **Migrated:** AI invocation from Netlify Functions → Supabase Edge Functions
+- ✅ **Benefit:** 400-second timeout (vs 26s on Netlify)
+- ✅ **Cost Savings:** Consolidated infrastructure ($25/mo vs $44/mo)
+- ✅ **Performance:** No more 504 timeout errors on long-form content
 
 See [Migration Complete Report](docs/PERDIA_MIGRATION_COMPLETE.md) for full details.
 

@@ -21,9 +21,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Technology Stack
 
 - **Frontend:** React 18.2 + Vite 6.1 + TailwindCSS 3.4
-- **Backend:** Supabase (PostgreSQL + Auth + Storage)
-- **AI:** Anthropic Claude (primary) + OpenAI (secondary)
-- **Deployment:** Netlify
+- **Backend:** Supabase (PostgreSQL + Auth + Storage + Edge Functions)
+- **AI:** Anthropic Claude (primary) + OpenAI (secondary) via Supabase Edge Functions
+- **Deployment:** Netlify (Frontend) + Supabase (Backend & AI - 400s timeout)
 - **Components:** Radix UI, Recharts, Framer Motion
 - **Routing:** React Router v7
 
@@ -206,9 +206,9 @@ const myClient = createClient(url, key);
 
 ### 4. AI Integration
 
-**Location:** `src/lib/ai-client.js`
+**Location:** `src/lib/ai-client.js` (frontend) + `supabase/functions/invoke-llm/` (backend)
 
-Unified interface supporting both Claude and OpenAI with a single `invokeLLM()` function.
+Unified interface supporting both Claude and OpenAI with a single `invokeLLM()` function. AI requests are routed through **Supabase Edge Functions** with a 400-second timeout for long-form content generation.
 
 **⚠️ CRITICAL: Current Claude Models (2025)**
 
@@ -580,17 +580,21 @@ perdia/
 │   ├── App.jsx                     # Root component
 │   └── main.jsx                    # Entry point
 ├── supabase/
+│   ├── functions/                  # Supabase Edge Functions
+│   │   └── invoke-llm/             # AI invocation endpoint (400s timeout)
+│   │       ├── index.ts            # Edge Function code
+│   │       └── README.md           # Function documentation
 │   └── migrations/
 │       └── 20250104000001_perdia_complete_schema.sql  # Complete DB schema
 ├── scripts/
 │   ├── migrate-database.js         # Apply migrations
-│   └── seed-agents.js              # Seed 9 AI agents
+│   ├── seed-agents.js              # Seed 9 AI agents
+│   └── test-invoke-llm.js          # Test Edge Function deployment
 ├── docs/                           # Documentation
-├── netlify/                        # Netlify serverless functions
 ├── .env.example                    # Environment variables template
 ├── vite.config.js                  # Vite configuration (path aliases)
 ├── package.json                    # Dependencies and scripts
-├── netlify.toml                    # Deployment configuration
+├── netlify.toml                    # Frontend deployment configuration
 └── README.md                       # Project overview
 ```
 
@@ -606,8 +610,13 @@ This codebase was **migrated from Base44** platform. Key architectural decisions
 1. **SDK Compatibility Layer** - Maintains Base44's API to minimize code changes
 2. **Custom Agent System** - Replaces missing Base44 agentSDK with custom implementation
 3. **Dual AI Support** - Claude (primary for content) + OpenAI (secondary for specialized tasks)
-4. **Supabase Stack** - PostgreSQL + Auth + Storage + RLS
-5. **Netlify Deployment** - Serverless functions + static hosting
+4. **Supabase Stack** - PostgreSQL + Auth + Storage + RLS + Edge Functions
+5. **Hybrid Deployment** - Netlify (frontend) + Supabase (backend & AI with 400s timeout)
+
+**Infrastructure Consolidation (Nov 2025):**
+- Migrated AI invocation from Netlify Functions → Supabase Edge Functions
+- Benefits: 400-second timeout (vs 26s), consolidated infrastructure, cost savings ($25/mo vs $44/mo)
+- No more 504 timeout errors on long-form content generation
 
 **Legacy Tables:** 11 entities defined but not implemented (EOSCompany, EOSRock, EOSIssue, Client, Project, Task, etc.) - kept in SDK for future compatibility, not used by current platform.
 
@@ -748,7 +757,7 @@ await ContentQueue.update(draft.id, {
 
 ## Deployment
 
-### Netlify Configuration
+### Frontend Deployment (Netlify)
 
 **Location:** `netlify.toml`
 
@@ -786,6 +795,39 @@ netlify open:admin           # Open Netlify dashboard
 
 **Important for Claude Code:**
 When working with Netlify operations via MCP, always use the `netlify-primary` server (DisruptorsAI account). This ensures all deployment, environment variable, and build commands target the correct Netlify account for this project.
+
+### Backend & AI Deployment (Supabase Edge Functions)
+
+**AI invocation runs on Supabase Edge Functions** (400-second timeout for long-form content generation).
+
+**Deployment Steps:**
+
+1. **Link to Supabase Project:**
+```bash
+npx supabase link --project-ref yvvtsfgryweqfppilkvo
+```
+
+2. **Deploy the Function:**
+```bash
+npx supabase functions deploy invoke-llm --project-ref yvvtsfgryweqfppilkvo
+```
+
+3. **Configure Secrets:**
+```bash
+npx supabase secrets set ANTHROPIC_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+npx supabase secrets set OPENAI_API_KEY=your_key --project-ref yvvtsfgryweqfppilkvo
+```
+
+4. **Verify Deployment:**
+```bash
+# List secrets
+npx supabase secrets list --project-ref yvvtsfgryweqfppilkvo
+
+# Test function
+node scripts/test-invoke-llm.js
+```
+
+See [SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md](./SUPABASE_EDGE_FUNCTION_DEPLOYMENT.md) for detailed deployment guide.
 
 ## Common Pitfalls
 
@@ -886,9 +928,12 @@ VITE_DEBUG=true npm run dev
 
 ---
 
-**Last Updated:** 2025-01-07
-**Version:** 1.1.0
-**Status:** ✅ Post-Migration - SDK Layer Complete, UI Development In Progress
+**Last Updated:** 2025-11-07
+**Version:** 1.2.0
+**Status:** ✅ Production Ready - AI on Supabase Edge Functions (400s timeout)
 **Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
+**Supabase Project:** yvvtsfgryweqfppilkvo
 
 **⚠️ IMPORTANT:** Always reference `docs/ANTHROPIC_API_GUIDE.md` for Claude API implementation details to ensure correct model usage, rate limit handling, and cost optimization.
+
+**🚀 INFRASTRUCTURE:** AI invocation runs on Supabase Edge Functions with 400-second timeout. No more 504 errors!

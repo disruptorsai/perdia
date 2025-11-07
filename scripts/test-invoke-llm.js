@@ -13,8 +13,15 @@ async function testInvokeLLM() {
   console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
   if (!supabaseUrl) {
     console.error('❌ VITE_SUPABASE_URL not found in environment variables');
+    process.exit(1);
+  }
+
+  if (!supabaseKey) {
+    console.error('❌ VITE_SUPABASE_ANON_KEY not found in environment variables');
     process.exit(1);
   }
 
@@ -44,6 +51,7 @@ async function testInvokeLLM() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify(testPayload),
     });
