@@ -712,10 +712,10 @@ Format:
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => handleAutoCluster('currently_ranked')}
-                disabled={currentlyRankedStats.total === 0 || loading}
+                disabled={totalCount === 0 || loading}
               >
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Key className="w-4 h-4 mr-2" />}
                 Auto-Cluster Keywords
@@ -726,7 +726,7 @@ Format:
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <CardTitle>Currently Ranked Keywords ({currentlyRankedKeywords.length})</CardTitle>
+                <CardTitle>Currently Ranked Keywords ({keywords.length})</CardTitle>
                 <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                   <div className="relative flex-1 sm:flex-initial">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -821,7 +821,7 @@ Format:
                 onChange={(e) => handleFileUpload(e, 'new_target')}
                 className="hidden"
               />
-              <Button variant="outline" onClick={() => handleExport('new_target')} disabled={newTargetStats.total === 0}>
+              <Button variant="outline" onClick={() => handleExport('new_target')} disabled={totalCount === 0}>
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
               </Button>
@@ -869,10 +869,10 @@ Format:
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => handleAutoCluster('new_target')}
-                disabled={newTargetStats.total === 0 || loading}
+                disabled={totalCount === 0 || loading}
               >
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Key className="w-4 h-4 mr-2" />}
                 Auto-Cluster Keywords
@@ -883,7 +883,7 @@ Format:
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <CardTitle>New Target Keywords ({newTargetKeywords.length})</CardTitle>
+                <CardTitle>New Target Keywords ({keywords.length})</CardTitle>
                 <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                   <div className="relative flex-1 sm:flex-initial">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
