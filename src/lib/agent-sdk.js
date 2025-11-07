@@ -498,9 +498,11 @@ class AgentSDK {
         return sum + (msg.tokens_used || 0);
       }, 0);
 
-      // Rough cost estimates (as of 2025)
+      // Rough cost estimates (as of November 2025)
       const costPerMillionTokens = {
-        'claude-3-5-sonnet': 3.00, // $3 per 1M tokens (input)
+        'claude-sonnet-4-5': 3.00, // $3 per 1M tokens (input), $15 output
+        'claude-haiku-4-5': 1.00, // $1 per 1M tokens (input), $5 output
+        'claude-opus-4-1': 15.00, // $15 per 1M tokens (input), $75 output
         'gpt-4o': 2.50, // $2.50 per 1M tokens (input)
         'gpt-4o-mini': 0.15, // $0.15 per 1M tokens (input)
       };

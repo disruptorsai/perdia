@@ -9,7 +9,7 @@ async function testInvokeLLM() {
 
   const testPayload = {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-sonnet-4-5',  // Claude 4.5 Sonnet (latest)
     messages: [
       {
         role: 'user',

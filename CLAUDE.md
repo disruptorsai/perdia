@@ -217,7 +217,7 @@ import { InvokeLLM } from '@/lib/perdia-sdk';
 const response = await InvokeLLM({
   prompt: 'Write an SEO article about...',
   provider: 'claude',
-  model: 'claude-3-5-sonnet',
+  model: 'claude-sonnet-4-5',
   temperature: 0.7,
   max_tokens: 4000
 });
@@ -254,7 +254,7 @@ const response = await InvokeLLM({
 8. `internal_linking_expert` - Strategic internal links
 9. `content_strategist` - Content strategy
 
-All use `claude-3-5-sonnet-20241022` by default with temperature 0.7.
+All use `claude-sonnet-4-5` (Claude Sonnet 4.5 - latest model as of Nov 2025) by default with temperature 0.7.
 
 ### 5. Agent Conversation System
 
@@ -617,7 +617,7 @@ await AgentDefinition.create({
   display_name: 'My Custom Agent',
   description: 'Does something specific',
   system_prompt: 'You are an expert at...',
-  model: 'claude-3-5-sonnet-20241022',
+  model: 'claude-sonnet-4-5',
   provider: 'claude',
   temperature: 0.7,
   max_tokens: 4000
