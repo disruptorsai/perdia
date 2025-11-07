@@ -48,6 +48,8 @@ async function deployEdgeFunction() {
 
   const secrets = [
     { name: 'ANTHROPIC_API_KEY', value: anthropicKey },
+    { name: 'SUPABASE_URL', value: supabaseUrl },
+    { name: 'SUPABASE_ANON_KEY', value: process.env.VITE_SUPABASE_ANON_KEY },
   ];
 
   if (openaiKey) {
@@ -93,8 +95,7 @@ async function deployEdgeFunction() {
       'deploy',
       'invoke-llm',
       '--project-ref',
-      projectRef,
-      '--no-verify-jwt'
+      projectRef
     ], {
       cwd: projectRoot,
       stdio: 'inherit',

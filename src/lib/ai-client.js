@@ -26,6 +26,8 @@
  *   });
  */
 
+import { supabase } from './supabase-client';
+
 // =====================================================
 // MODEL CONFIGURATIONS
 // =====================================================
@@ -130,10 +132,18 @@ export async function invokeLLM(options) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const functionUrl = `${supabaseUrl}/functions/v1/invoke-llm`;
 
+    // Get the current session for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('User not authenticated. Please sign in to use AI features.');
+    }
+
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
       },
       body: JSON.stringify(requestBody),
     });
