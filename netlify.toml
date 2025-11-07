@@ -10,9 +10,8 @@
 # ============================================================================
 
 [build]
-  # Build command - explicitly install all dependencies including dev
-  # Note: vite, tailwindcss, and build tools moved to dependencies (not devDependencies)
-  # to ensure they're installed even when NODE_ENV=production
+  # Build command - skip linting during build to avoid deployment failures
+  # Linting should be done in development and CI/CD pipeline
   command = "npm install && npm run build"
 
   # Publish directory (Vite default output)
