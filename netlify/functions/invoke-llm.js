@@ -23,13 +23,13 @@ export const handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { provider, model, prompt, temperature, max_tokens, response_json_schema } = body;
+    const { provider, model, prompt, messages, system_prompt, temperature, max_tokens, response_json_schema } = body;
 
-    // Validate required fields
-    if (!provider || !prompt) {
+    // Validate required fields - support both simple prompt and conversation messages
+    if (!provider || (!prompt && !messages)) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields: provider, prompt' }),
+        body: JSON.stringify({ error: 'Missing required fields: provider, and either prompt or messages' }),
       };
     }
 
@@ -41,17 +41,29 @@ export const handler = async (event) => {
         apiKey: process.env.ANTHROPIC_API_KEY, // Server-side env var (no VITE_ prefix)
       });
 
-      const anthropicResponse = await anthropic.messages.create({
+      // Build messages array - support both simple prompt and conversation messages
+      let messagesToSend;
+      if (messages) {
+        // Conversation mode with message history
+        messagesToSend = messages;
+      } else {
+        // Simple prompt mode
+        messagesToSend = [{ role: 'user', content: prompt }];
+      }
+
+      const requestParams = {
         model: model || 'claude-3-5-sonnet-20241022',
         max_tokens: max_tokens || 4000,
         temperature: temperature || 0.7,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+        messages: messagesToSend,
+      };
+
+      // Add system prompt if provided
+      if (system_prompt) {
+        requestParams.system = system_prompt;
+      }
+
+      const anthropicResponse = await anthropic.messages.create(requestParams);
 
       response = {
         content: anthropicResponse.content[0].text,
@@ -68,14 +80,32 @@ export const handler = async (event) => {
         apiKey: process.env.OPENAI_API_KEY, // Server-side env var (no VITE_ prefix)
       });
 
+      // Build messages array - support both simple prompt and conversation messages
+      let messagesToSend;
+      if (messages) {
+        // Conversation mode with message history
+        messagesToSend = messages;
+
+        // Add system message at the beginning if system_prompt provided
+        if (system_prompt) {
+          messagesToSend = [
+            { role: 'system', content: system_prompt },
+            ...messages
+          ];
+        }
+      } else {
+        // Simple prompt mode
+        messagesToSend = [{ role: 'user', content: prompt }];
+
+        // Add system message if provided
+        if (system_prompt) {
+          messagesToSend.unshift({ role: 'system', content: system_prompt });
+        }
+      }
+
       const chatCompletion = await openai.chat.completions.create({
         model: model || 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
+        messages: messagesToSend,
         temperature: temperature || 0.7,
         max_tokens: max_tokens || 4000,
         ...(response_json_schema && { response_format: { type: 'json_object' } }),
