@@ -79,6 +79,8 @@ serve(async (req) => {
   try {
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
+    console.log('🔐 Auth header present:', !!authHeader);
+
     if (!authHeader) {
       console.error('❌ Missing authorization header');
       return new Response(
@@ -87,10 +89,31 @@ serve(async (req) => {
       );
     }
 
+    // Log environment variables (without exposing values)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    console.log('🔧 Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasAnonKey: !!supabaseAnonKey,
+      urlPrefix: supabaseUrl?.substring(0, 20)
+    });
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('❌ Missing Supabase environment variables');
+      return new Response(
+        JSON.stringify({
+          error: 'Server configuration error',
+          message: 'Missing required environment variables'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create Supabase client to verify JWT
+    console.log('🔐 Creating Supabase client for JWT verification...');
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: { Authorization: authHeader },
@@ -99,12 +122,29 @@ serve(async (req) => {
     );
 
     // Verify the user is authenticated
+    console.log('🔐 Verifying JWT token...');
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
 
-    if (authError || !user) {
-      console.error('❌ Authentication failed:', authError?.message);
+    if (authError) {
+      console.error('❌ JWT verification error:', {
+        message: authError.message,
+        status: authError.status,
+        name: authError.name
+      });
       return new Response(
-        JSON.stringify({ error: 'Authentication failed', message: authError?.message }),
+        JSON.stringify({
+          error: 'JWT verification failed',
+          message: authError.message,
+          details: authError.status
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!user) {
+      console.error('❌ No user returned from JWT verification');
+      return new Response(
+        JSON.stringify({ error: 'Invalid token', message: 'No user found' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
