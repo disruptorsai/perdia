@@ -26,7 +26,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarHeader,
-  SidebarFooter
+  SidebarFooter,
+  Badge
 } from '@/components/ui';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
@@ -65,11 +66,13 @@ const navigationItems = [
     title: 'Social Posts',
     url: '/social',
     icon: Share2,
+    comingSoon: true,
   },
   {
     title: 'Content Calendar',
     url: '/calendar',
     icon: Calendar,
+    comingSoon: true,
   },
   {
     title: 'Team Chat',
@@ -113,6 +116,25 @@ function AppSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
+
+                // Handle "Coming Soon" items
+                if (item.comingSoon) {
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <div className="flex items-center justify-between px-3 py-2 cursor-not-allowed opacity-50">
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-muted-foreground">{item.title}</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          Coming Soon
+                        </Badge>
+                      </div>
+                    </SidebarMenuItem>
+                  );
+                }
+
+                // Regular navigation items
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
