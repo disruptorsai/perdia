@@ -28,7 +28,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import Anthropic from 'npm:@anthropic-ai/sdk@0.30.1';
+import Anthropic from 'npm:@anthropic-ai/sdk@0.32.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,6 +110,9 @@ serve(async (req) => {
 
       const anthropic = new Anthropic({
         apiKey: apiKey,
+        defaultHeaders: {
+          'anthropic-version': '2023-06-01'  // Required API version header
+        }
       });
 
       // Build messages array
@@ -123,7 +126,7 @@ serve(async (req) => {
       }
 
       const requestParams: any = {
-        model: model || 'claude-sonnet-4-5',
+        model: model || 'claude-sonnet-4-5-20250929',  // Dated version (recommended for production)
         max_tokens: max_tokens || 4000,
         temperature: temperature ?? 0.7,
         messages: messagesToSend,

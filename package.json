@@ -7,7 +7,8 @@
   "author": "Disruptors Media",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "vite",
+    "dev": "netlify dev --offline",
+    "dev:vite": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
