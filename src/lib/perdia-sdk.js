@@ -27,6 +27,7 @@ import {
   getSignedUrl,
   getPublicUrl,
 } from './supabase-client';
+import { EdgeFunctions } from './edge-function-client';
 
 // =====================================================
 // BASE ENTITY CLASS
@@ -907,6 +908,81 @@ export const perdia = {
   // Auth
   auth: User,
 };
+
+// =====================================================
+// EDGE FUNCTION WRAPPERS
+// =====================================================
+
+/**
+ * Edge Functions - Supabase Edge Function integrations
+ *
+ * These functions provide access to Supabase Edge Functions for:
+ * - WordPress publishing
+ * - Keyword research
+ * - Google Search Console sync
+ * - AI content optimization
+ * - Auto content scheduling
+ */
+
+/**
+ * PublishToWordPress
+ * Publish content to WordPress with images, categories, and tags
+ *
+ * @param {Object} options - Publishing options
+ * @param {string} options.content_id - Content queue item ID (required)
+ * @param {string} options.wordpress_site_id - Specific WordPress site ID (optional)
+ * @param {string} options.publish_status - 'publish' or 'draft' (default: 'publish')
+ * @returns {Promise<Object>} WordPress post data
+ */
+export const PublishToWordPress = EdgeFunctions.publishToWordPress;
+
+/**
+ * ResearchKeywords
+ * Research keywords using DataForSEO API
+ *
+ * @param {Object} options - Research options
+ * @param {string[]} options.keywords - Array of keywords to research (max 100)
+ * @param {number} options.location - DataForSEO location code (default: 2840 = US)
+ * @param {string} options.language - Language code (default: 'en')
+ * @param {boolean} options.include_suggestions - Include related keywords (default: true)
+ * @returns {Promise<Object>} Keyword research data with metrics
+ */
+export const ResearchKeywords = EdgeFunctions.researchKeywords;
+
+/**
+ * SyncGSCData
+ * Sync Google Search Console performance data and rankings
+ *
+ * @param {Object} options - Sync options
+ * @param {number} options.days - Number of days to sync (default: 30)
+ * @param {string} options.property_url - GSC property URL (uses env var if not provided)
+ * @returns {Promise<Object>} Sync results with opportunities
+ */
+export const SyncGSCData = EdgeFunctions.syncGSCData;
+
+/**
+ * OptimizeContent
+ * AI-powered content analysis and optimization
+ *
+ * @param {Object} options - Optimization options
+ * @param {string} options.content_id - Content queue item ID (required)
+ * @param {string} options.analysis_type - 'full' | 'quick' | 'seo' (default: 'full')
+ * @param {boolean} options.include_rewrite - Generate rewritten sections (default: false)
+ * @param {string[]} options.target_keywords - Specific keywords to optimize for
+ * @returns {Promise<Object>} Content analysis with recommendations
+ */
+export const OptimizeContent = EdgeFunctions.optimizeContent;
+
+/**
+ * ScheduleContent
+ * Auto-schedule approved content based on automation settings
+ *
+ * @param {Object} options - Scheduling options
+ * @param {number} options.articles_limit - Override articles_per_day setting
+ * @param {boolean} options.publish_immediately - Trigger WordPress publish (default: false)
+ * @returns {Promise<Object>} Scheduled content items
+ */
+export const ScheduleContent = EdgeFunctions.scheduleContent;
 
 // =====================================================
 // DEFAULT EXPORT
