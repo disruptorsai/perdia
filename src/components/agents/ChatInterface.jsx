@@ -125,6 +125,7 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             } else {
                  setConversation(null);
                  setMessages([]);
+                 setUserInput('');
                  setIsLoading(false);
                  setPendingContent(null);
                  setShowSaveConfirmation(false);

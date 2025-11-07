@@ -116,6 +116,7 @@ export default function AIAgents() {
 
     const handleNewConversation = () => {
         setSelectedConversationId(null);
+        toast.success('Started new chat');
     };
     
     const handleConversationCreated = (newConversation) => {
