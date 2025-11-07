@@ -31,7 +31,7 @@ import {
 
 class AgentSDK {
   constructor() {
-    this.defaultModel = 'claude-3-5-sonnet-20240620';
+    this.defaultModel = 'claude-3-opus-20240229';
     this.defaultProvider = 'claude';
   }
 
