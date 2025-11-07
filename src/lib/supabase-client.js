@@ -88,25 +88,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
  * @returns {Promise<{user: User | null, session: Session | null}>}
  */
 export async function getCurrentUser() {
-  // DEVELOPMENT MODE: Auth disabled for testing
-  // Return a mock user so the app works without authentication
-  const mockUser = {
-    id: 'dev-user-123',
-    email: 'dev@perdia.test',
-    user_metadata: { name: 'Dev User' },
-    aud: 'authenticated',
-    role: 'authenticated',
-  };
-
-  const mockSession = {
-    user: mockUser,
-    access_token: 'dev-token',
-  };
-
-  console.log('🔓 Auth disabled - using mock user for testing');
-  return { user: mockUser, session: mockSession };
-
-  /* ORIGINAL CODE - Uncomment when ready to enable auth
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error) {
@@ -117,7 +98,6 @@ export async function getCurrentUser() {
   const { data: { session } } = await supabase.auth.getSession();
 
   return { user, session };
-  */
 }
 
 /**
@@ -125,13 +105,8 @@ export async function getCurrentUser() {
  * @returns {Promise<boolean>}
  */
 export async function isAuthenticated() {
-  // DEVELOPMENT MODE: Always return true for testing
-  return true;
-
-  /* ORIGINAL CODE - Uncomment when ready to enable auth
   const { user } = await getCurrentUser();
   return !!user;
-  */
 }
 
 /**

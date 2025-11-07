@@ -10,10 +10,12 @@ import { getCurrentUser, supabase } from '@/lib/supabase-client';
 
 // Import all page components
 import Login from './Login';
+import Signup from './Signup';
 import Dashboard from './Dashboard';
 import AIAgents from './AIAgents';
 import KeywordManager from './KeywordManager';
 import ContentLibrary from './ContentLibrary';
+import ContentEditor from './ContentEditor';
 import ApprovalQueue from './ApprovalQueue';
 import AutomationControls from './AutomationControls';
 import WordPressConnection from './WordPressConnection';
@@ -85,6 +87,7 @@ export default function Pages() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
         {/* Protected routes */}
         <Route
@@ -97,6 +100,7 @@ export default function Pages() {
                   <Route path="/ai-agents" element={<AIAgents />} />
                   <Route path="/keywords" element={<KeywordManager />} />
                   <Route path="/content" element={<ContentLibrary />} />
+                  <Route path="/content/edit/:id" element={<ContentEditor />} />
                   <Route path="/approvals" element={<ApprovalQueue />} />
                   <Route path="/automation" element={<AutomationControls />} />
                   <Route path="/wordpress" element={<WordPressConnection />} />

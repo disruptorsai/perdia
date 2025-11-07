@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Keyword } from '@/api/entities';
+import { Keyword, ContentQueue } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, Search, Key, Loader2, Trash2, Plus, TrendingUp, Sparkles, ArrowUpDown, Target, ListChecks } from 'lucide-react';
+import { Upload, Download, Search, Key, Loader2, Trash2, Plus, TrendingUp, Sparkles, ArrowUpDown, Target, ListChecks, PenSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -21,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function KeywordManager() {
+  const navigate = useNavigate();
   const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('currently_ranked');
@@ -34,6 +36,7 @@ export default function KeywordManager() {
   const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
   const [suggestionInput, setSuggestionInput] = useState('');
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
+  const [generatingArticle, setGeneratingArticle] = useState(null);
 
   useEffect(() => {
     loadKeywords();
@@ -224,9 +227,126 @@ Provide realistic search volume estimates and difficulty scores. Do not include 
     }
   };
 
+  const handleGenerateArticle = async (keyword) => {
+    setGeneratingArticle(keyword.id);
+
+    try {
+      toast.loading('Generating SEO-optimized article...', { id: 'generate-article' });
+
+      // Build comprehensive prompt based on ArticleGenerator pattern
+      const prompt = `You are an expert SEO content writer for GetEducated.com, a trusted resource helping adult learners navigate online education options.
+
+Write a comprehensive, high-quality article optimized for this keyword: "${keyword.keyword}"
+
+AUDIENCE:
+- Adult students researching online education programs
+- Working professionals seeking career advancement through online degrees
+- People comparing different online education options
+
+TARGET LENGTH: MINIMUM 1500 words, MAXIMUM 2500 words
+
+CRITICAL REQUIREMENTS:
+1. WORD COUNT: Must be at least 1500 words (excluding HTML tags)
+2. STRUCTURE:
+   - Compelling introduction (150-200 words) explaining the topic's relevance
+   - 6-8 main content sections with descriptive H2 subheadings (200-300 words each)
+   - Each section with specific examples, statistics, or actionable advice
+   - "Frequently Asked Questions" section with 5 comprehensive Q&As (75-100 words per answer)
+   - Strong conclusion with clear next steps (100-150 words)
+
+3. SEO OPTIMIZATION:
+   - Naturally incorporate the keyword "${keyword.keyword}" throughout (avoid over-optimization)
+   - Include related keywords: ${keyword.related_keywords?.join(', ') || 'online education, degree programs, accredited online schools'}
+   - Use semantic variations and synonyms
+   - Optimize for search intent (informational, comparison, decision-making)
+
+4. CONTENT DEPTH:
+   - Include specific examples of online programs, schools, or degree options
+   - Reference accreditation, costs, program features, and career outcomes
+   - Provide actionable tips and step-by-step guidance where relevant
+   - Add statistics or data points to build credibility
+   - Write in a helpful, authoritative, yet accessible tone
+
+5. FAQ SECTION (MANDATORY):
+   - Format with H3 tags for questions
+   - Answer common searcher questions related to "${keyword.keyword}"
+   - Target featured snippet opportunities
+   - Provide value beyond the main content
+
+6. QUALITY STANDARDS:
+   - Original, well-researched content
+   - Engaging writing style that holds reader attention
+   - Proper transitions between sections
+   - No promotional language or pushy calls-to-action
+   - Focus on helping readers make informed decisions
+
+OUTPUT FORMAT:
+Return ONLY the article body in clean HTML format with:
+- <h2> tags for main sections
+- <h3> tags for FAQ questions
+- <p> tags for paragraphs
+- <ul> or <ol> tags for lists
+- <strong> for emphasis where appropriate
+- NO <h1> tag (title will be added separately)
+- NO wrapper divs or extra containers
+
+Begin with an engaging introduction and write the complete article now:`;
+
+      // Generate article content using AI
+      const articleHtml = await InvokeLLM({ prompt, max_tokens: 4096 });
+
+      // Calculate word count (strip HTML tags)
+      const textContent = articleHtml.replace(/<[^>]*>?/gm, ' ');
+      const wordCount = textContent.match(/\b\w+\b/g)?.length || 0;
+
+      // Generate meta description
+      const metaPrompt = `Write a compelling meta description (150-155 characters) for this article about "${keyword.keyword}". Make it click-worthy and SEO-optimized. Return ONLY the meta description text, no quotes or formatting.`;
+      const metaDescription = await InvokeLLM({ prompt: metaPrompt, max_tokens: 100 });
+
+      // Create article title
+      const title = keyword.keyword.split(' ').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+
+      // Save to content queue
+      const contentItem = await ContentQueue.create({
+        title: `${title} | GetEducated.com`,
+        content: articleHtml,
+        content_type: 'new_article',
+        status: 'draft',
+        target_keywords: [keyword.keyword, ...(keyword.related_keywords || [])],
+        word_count: wordCount,
+        meta_description: metaDescription.trim(),
+        slug: keyword.keyword.toLowerCase().replace(/\s+/g, '-'),
+        agent_name: 'seo_content_writer',
+        automation_mode: 'manual'
+      });
+
+      // Update keyword status
+      await Keyword.update(keyword.id, {
+        status: 'in_progress',
+        notes: `Article generated on ${new Date().toLocaleDateString()}`
+      });
+
+      toast.success(`Article generated! (${wordCount} words)`, { id: 'generate-article' });
+
+      // Reload keywords to show updated status
+      loadKeywords();
+
+      // Navigate to content editor
+      navigate(`/content/edit/${contentItem.id}`);
+
+    } catch (error) {
+      console.error('Error generating article:', error);
+      toast.error('Failed to generate article. Please try again.', { id: 'generate-article' });
+    } finally {
+      setGeneratingArticle(null);
+    }
+  };
+
   const handleAutoCluster = async (listType) => {
     const keywordsToCluster = keywords.filter(kw => kw.list_type === listType);
-    
+
     if (keywordsToCluster.length === 0) {
       toast.error("No keywords to cluster in this list");
       return;
@@ -440,13 +560,34 @@ Format:
                     <TableCell className="text-center">{keyword.current_ranking || '-'}</TableCell>
                   )}
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(keyword.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleGenerateArticle(keyword)}
+                        disabled={generatingArticle === keyword.id || keyword.status === 'completed'}
+                        className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                      >
+                        {generatingArticle === keyword.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <PenSquare className="w-4 h-4 mr-2" />
+                            Generate
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(keyword.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

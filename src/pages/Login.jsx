@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Smartphone, Mail, Lock, AlertCircle, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Smartphone, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase, getCurrentUser } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase-client';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,24 +15,6 @@ export default function Login() {
     email: '',
     password: ''
   });
-
-  // Auto-bypass in dev mode if mock user is available
-  useEffect(() => {
-    const checkDevMode = async () => {
-      const { user } = await getCurrentUser();
-      if (user && user.id === 'dev-user-123') {
-        // We have a mock user, auto-redirect to dashboard
-        console.log('🔓 Dev mode detected, auto-bypassing login');
-        navigate('/', { replace: true });
-      }
-    };
-    checkDevMode();
-  }, [navigate]);
-
-  const handleDevModeBypass = () => {
-    console.log('🔓 Dev mode bypass activated');
-    navigate('/', { replace: true });
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -139,34 +121,16 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">Development Mode</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleDevModeBypass}
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Bypass Login (Dev Mode)
-            </Button>
-
-            <div className="text-center text-xs text-muted-foreground">
-              <p>Demo credentials:</p>
-              <p className="mt-1">
-                <code className="text-xs bg-muted px-2 py-1 rounded">
-                  demo@perdia.com / demo123
-                </code>
-              </p>
-            </div>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link
+                to="/signup"
+                className="text-[#009fde] hover:text-[#0077b5] font-medium hover:underline"
+              >
+                Sign up
+              </Link>
+            </p>
           </div>
         </CardContent>
       </Card>
