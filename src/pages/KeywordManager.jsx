@@ -21,6 +21,7 @@ import { InvokeLLM } from '@/api/integrations';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DataForSEOClient } from '@/lib/dataforseo-client';
+import { DataPagination } from '@/components/ui/DataPagination';
 
 export default function KeywordManager() {
   const navigate = useNavigate();
@@ -40,15 +41,56 @@ export default function KeywordManager() {
   const [generatingArticle, setGeneratingArticle] = useState(null);
   const [fetchingKeywordData, setFetchingKeywordData] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Reset to page 1 when filters or tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, filterStatus, filterPriority, filterCategory, sortBy, sortDirection, searchQuery]);
+
   useEffect(() => {
     loadKeywords();
-  }, []);
+  }, [activeTab, currentPage, pageSize, filterStatus, filterPriority, filterCategory, sortBy, sortDirection, searchQuery]);
 
   const loadKeywords = async () => {
     setLoading(true);
     try {
-      const data = await Keyword.list('-created_date');
+      // Build filters for database query
+      const filters = {
+        list_type: activeTab
+      };
+
+      // Add filter conditions
+      if (filterStatus !== 'all') {
+        filters.status = filterStatus;
+      }
+      if (filterPriority !== 'all') {
+        filters.priority = parseInt(filterPriority);
+      }
+      if (filterCategory !== 'all') {
+        filters.category = filterCategory;
+      }
+      if (searchQuery) {
+        // Use ilike for case-insensitive search
+        filters.keyword = { ilike: `%${searchQuery}%` };
+      }
+
+      // Build query options with pagination
+      const options = {
+        orderBy: {
+          column: sortBy,
+          ascending: sortDirection === 'asc'
+        },
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize
+      };
+
+      const data = await Keyword.find(filters, options);
       setKeywords(data);
+      setTotalCount(data.count || 0);
     } catch (error) {
       console.error("Error loading keywords:", error);
       toast.error("Failed to load keywords");
@@ -459,75 +501,9 @@ Format:
     }
   };
 
-  const getFilteredAndSortedKeywords = (listType) => {
-    let filtered = keywords.filter(kw => {
-      const matchesListType = kw.list_type === listType;
-      const matchesSearch = kw.keyword.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           (kw.category && kw.category.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesStatus = filterStatus === 'all' || kw.status === filterStatus;
-      const matchesPriority = filterPriority === 'all' || kw.priority.toString() === filterPriority;
-      const matchesCategory = filterCategory === 'all' || kw.category === filterCategory;
-      return matchesListType && matchesSearch && matchesStatus && matchesPriority && matchesCategory;
-    });
-
-    // Sort
-    filtered.sort((a, b) => {
-      let aVal, bVal;
-      
-      switch(sortBy) {
-        case 'keyword':
-          aVal = a.keyword || '';
-          bVal = b.keyword || '';
-          break;
-        case 'search_volume':
-          aVal = a.search_volume || 0;
-          bVal = b.search_volume || 0;
-          break;
-        case 'difficulty':
-          aVal = a.difficulty || 0;
-          bVal = b.difficulty || 0;
-          break;
-        case 'priority':
-          aVal = a.priority || 0;
-          bVal = b.priority || 0;
-          break;
-        case 'category':
-          aVal = a.category || '';
-          bVal = b.category || '';
-          break;
-        default:
-          aVal = a.created_date || '';
-          bVal = b.created_date || '';
-      }
-
-      if (typeof aVal === 'string') {
-        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      } else {
-        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-    });
-
-    return filtered;
-  };
-
-  const currentlyRankedKeywords = getFilteredAndSortedKeywords('currently_ranked');
-  const newTargetKeywords = getFilteredAndSortedKeywords('new_target');
-
+  // Note: Filtering and sorting now done at database level in loadKeywords()
+  // Categories are loaded from current page only (for filter dropdown)
   const categories = [...new Set(keywords.map(kw => kw.category).filter(Boolean))];
-
-  const currentlyRankedStats = {
-    total: keywords.filter(k => k.list_type === 'currently_ranked').length,
-    queued: keywords.filter(k => k.list_type === 'currently_ranked' && k.status === 'queued').length,
-    in_progress: keywords.filter(k => k.list_type === 'currently_ranked' && k.status === 'in_progress').length,
-    completed: keywords.filter(k => k.list_type === 'currently_ranked' && k.status === 'completed').length
-  };
-
-  const newTargetStats = {
-    total: keywords.filter(k => k.list_type === 'new_target').length,
-    queued: keywords.filter(k => k.list_type === 'new_target' && k.status === 'queued').length,
-    in_progress: keywords.filter(k => k.list_type === 'new_target' && k.status === 'in_progress').length,
-    completed: keywords.filter(k => k.list_type === 'new_target' && k.status === 'completed').length
-  };
 
   const KeywordTable = ({ keywords: displayKeywords, listType }) => (
     <>
@@ -686,57 +662,32 @@ Format:
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-white/60 backdrop-blur-sm h-auto p-2 rounded-xl border border-slate-200 shadow-lg">
-          <TabsTrigger 
-            value="currently_ranked" 
+          <TabsTrigger
+            value="currently_ranked"
             className="h-full py-3 px-4 text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600 transition-all duration-300 flex items-center justify-center gap-2 rounded-lg"
           >
             <ListChecks className="w-4 h-4" />
-            Currently Ranked ({currentlyRankedStats.total})
+            Currently Ranked {activeTab === 'currently_ranked' && totalCount > 0 && `(${totalCount})`}
           </TabsTrigger>
-          <TabsTrigger 
-            value="new_target" 
+          <TabsTrigger
+            value="new_target"
             className="h-full py-3 px-4 text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-purple-600 transition-all duration-300 flex items-center justify-center gap-2 rounded-lg"
           >
             <Target className="w-4 h-4" />
-            New Target Keywords ({newTargetStats.total})
+            New Target Keywords {activeTab === 'new_target' && totalCount > 0 && `(${totalCount})`}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="currently_ranked" className="mt-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-blue-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Total Keywords</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{currentlyRankedStats.total}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-yellow-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Queued</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{currentlyRankedStats.queued}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-blue-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">In Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{currentlyRankedStats.in_progress}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-green-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Completed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{currentlyRankedStats.completed}</div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="border-l-4 border-blue-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600">Total Keywords (Currently Ranked)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-slate-900">{totalCount.toLocaleString()}</div>
+              <p className="text-xs text-slate-500 mt-1">Keywords you currently rank for</p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -757,7 +708,7 @@ Format:
                 onChange={(e) => handleFileUpload(e, 'currently_ranked')}
                 className="hidden"
               />
-              <Button variant="outline" onClick={() => handleExport('currently_ranked')} disabled={currentlyRankedStats.total === 0}>
+              <Button variant="outline" onClick={() => handleExport('currently_ranked')} disabled={totalCount === 0}>
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
               </Button>
@@ -827,47 +778,29 @@ Format:
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <KeywordTable keywords={currentlyRankedKeywords} listType="currently_ranked" />
+            <CardContent className="space-y-4">
+              <KeywordTable keywords={keywords} listType="currently_ranked" />
+              <DataPagination
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                onPageChange={(page) => setCurrentPage(page)}
+                onPageSizeChange={(size) => setPageSize(size)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="new_target" className="mt-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-l-4 border-purple-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Total Keywords</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{newTargetStats.total}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-yellow-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Queued</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{newTargetStats.queued}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-blue-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">In Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{newTargetStats.in_progress}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-green-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Completed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{newTargetStats.completed}</div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="border-l-4 border-purple-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600">Total Keywords (New Targets)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-slate-900">{totalCount.toLocaleString()}</div>
+              <p className="text-xs text-slate-500 mt-1">New keywords to target for content creation</p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -1002,8 +935,15 @@ Format:
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <KeywordTable keywords={newTargetKeywords} listType="new_target" />
+            <CardContent className="space-y-4">
+              <KeywordTable keywords={keywords} listType="new_target" />
+              <DataPagination
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                onPageChange={(page) => setCurrentPage(page)}
+                onPageSizeChange={(size) => setPageSize(size)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
