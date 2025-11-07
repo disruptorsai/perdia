@@ -9,7 +9,11 @@ import {
   Zap,
   Globe,
   User,
-  Menu
+  Menu,
+  BookOpen,
+  Share2,
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import {
   Sidebar,
@@ -24,6 +28,7 @@ import {
   SidebarHeader,
   SidebarFooter
 } from '@/components/ui';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 const navigationItems = [
   {
@@ -50,6 +55,26 @@ const navigationItems = [
     title: 'Approval Queue',
     url: '/approvals',
     icon: CheckSquare,
+  },
+  {
+    title: 'Blog Library',
+    url: '/blog',
+    icon: BookOpen,
+  },
+  {
+    title: 'Social Posts',
+    url: '/social',
+    icon: Share2,
+  },
+  {
+    title: 'Content Calendar',
+    url: '/calendar',
+    icon: Calendar,
+  },
+  {
+    title: 'Team Chat',
+    url: '/chat',
+    icon: MessageSquare,
   },
   {
     title: 'Automation Controls',
@@ -143,7 +168,9 @@ export default function AppLayout({ children }) {
 
           {/* Main content */}
           <main className="flex-1 bg-slate-50">
-            {children}
+            <ErrorBoundary errorMessage="An error occurred while loading this page.">
+              {children}
+            </ErrorBoundary>
           </main>
         </div>
       </div>
