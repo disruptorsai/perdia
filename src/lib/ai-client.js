@@ -168,8 +168,16 @@ export async function invokeLLM(options) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to invoke LLM');
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (parseError) {
+        console.error('[invokeLLM] Failed to parse error response:', parseError);
+        throw new Error(`Edge Function error (${response.status}): ${response.statusText}`);
+      }
+
+      console.error('[invokeLLM] Edge Function error response:', errorData);
+      throw new Error(errorData.error || errorData.message || 'Failed to invoke LLM');
     }
 
     const data = await response.json();
