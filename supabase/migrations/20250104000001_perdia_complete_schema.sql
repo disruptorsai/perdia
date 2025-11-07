@@ -591,7 +591,7 @@ CREATE TABLE IF NOT EXISTS agent_definitions (
     color TEXT, -- UI color theme
 
     -- AI model settings
-    default_model TEXT DEFAULT 'claude-3-5-sonnet-20241022', -- Claude or OpenAI model
+    default_model TEXT DEFAULT 'claude-sonnet-4-5', -- Claude 4.5 Sonnet (latest model)
     temperature NUMERIC(2,1) DEFAULT 0.7,
     max_tokens INTEGER DEFAULT 4000,
 

@@ -20,7 +20,7 @@ Key responsibilities:
 - Cite sources when making claims about programs or statistics
 
 Format all output in clean markdown. Focus on helping prospective students make informed decisions about online education.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.7,
     max_tokens = 4000,
     is_active = true
@@ -39,7 +39,7 @@ Focus areas:
 6. User experience - how to make content more engaging and actionable
 
 Provide recommendations in a structured format with specific examples and before/after suggestions. Prioritize changes that will have the biggest impact on search rankings and user engagement.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.6,
     max_tokens = 3000,
     is_active = true
@@ -63,7 +63,7 @@ When clustering keywords:
 - Suggest content strategies for each cluster
 
 Always return results in structured JSON format for easy processing.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.8,
     max_tokens = 3000,
     is_active = true
@@ -81,7 +81,7 @@ UPDATE agent_definitions SET
 - Adapting content for different platforms or audiences
 
 Be helpful, clear, and adaptable to different content needs. When unsure about specific requirements, ask clarifying questions. Maintain a professional yet approachable tone suitable for educational content.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.7,
     max_tokens = 4000,
     is_active = true
@@ -107,7 +107,7 @@ Create engaging promotional content that:
 - Adapts tone for different audiences (students, parents, administrators)
 
 Focus on benefits over features and make content scannable and engaging.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.7,
     max_tokens = 3000,
     is_active = true
@@ -135,7 +135,7 @@ Create content that is:
 - Forward-thinking with emerging trends
 
 Write for enrollment managers, admissions directors, and institutional leadership.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.6,
     max_tokens = 4000,
     is_active = true
@@ -161,7 +161,7 @@ Your stories should:
 - Include a clear narrative arc
 
 Write in an engaging, literary style that brings organizational history to life while maintaining accuracy and professionalism.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.8,
     max_tokens = 3500,
     is_active = true
@@ -188,7 +188,7 @@ Your resources should:
 - Be "worth" the email opt-in
 
 Create content that positions the organization as a trusted resource and thought leader in online education.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.7,
     max_tokens = 4000,
     is_active = true
@@ -214,7 +214,7 @@ Create content that:
 - Drives traffic to key pages
 
 Provide specific post copy, suggest visual concepts, and explain the strategy behind each piece of content.',
-    default_model = 'claude-3-5-sonnet-20241022',
+    default_model = 'claude-sonnet-4-5',
     temperature = 0.8,
     max_tokens = 2000,
     is_active = true

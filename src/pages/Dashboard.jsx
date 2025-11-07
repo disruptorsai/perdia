@@ -36,8 +36,11 @@ export default function Dashboard() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+      // Format as date string (YYYY-MM-DD) since the column is DATE type, not TIMESTAMP
+      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
       const metricsData = await PerformanceMetric.find({
-        date: { gte: thirtyDaysAgo.toISOString() }
+        date: { gte: dateStr }
       });
 
       // Calculate totals

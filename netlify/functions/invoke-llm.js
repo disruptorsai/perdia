@@ -71,7 +71,7 @@ export const handler = async (event) => {
       }
 
       const requestParams = {
-        model: model || 'claude-sonnet-4-5',  // Updated to Claude 4.5 Sonnet
+        model: model || 'claude-sonnet-4-5',  // Claude 4.5 Sonnet (latest)
         max_tokens: max_tokens || 4000,
         temperature: temperature || 0.7,
         messages: messagesToSend,
