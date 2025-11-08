@@ -131,9 +131,9 @@ Always return results in structured JSON format for easy processing.`,
 Be helpful, clear, and adaptable to different content needs. When unsure about specific requirements, ask clarifying questions. Maintain a professional yet approachable tone suitable for educational content.`,
     icon: 'MessageSquare',
     color: 'gray',
-    default_model: 'claude-sonnet-4-5-20250929',
+    default_model: 'claude-haiku-4-5-20251001',  // Fast model for chat (5-10x faster than Sonnet)
     temperature: 0.7,
-    max_tokens: 4000,
+    max_tokens: 2000,  // Reduced for faster responses
     capabilities: ['content_generation', 'editing'],
     is_active: true,
   },

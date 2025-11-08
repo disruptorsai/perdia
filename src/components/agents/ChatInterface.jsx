@@ -590,11 +590,17 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             <div className="border-t border-slate-200 p-4 bg-white">
                  {/* AI Processing Indicator - More Prominent */}
                  {isAgentThinking && (
-                    <div className="flex items-center justify-center gap-3 mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg animate-pulse">
-                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                        <div className="flex flex-col">
-                            <p className="text-sm font-semibold text-blue-900">AI Agent is thinking...</p>
-                            <p className="text-xs text-blue-700">Generating response using {agentDisplayName}</p>
+                    <div className="mb-3">
+                        <div className="flex items-center justify-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                            <div className="flex flex-col flex-1">
+                                <p className="text-sm font-semibold text-blue-900">AI Agent is thinking...</p>
+                                <p className="text-xs text-blue-700">Generating response using {agentDisplayName}</p>
+                            </div>
+                        </div>
+                        {/* Animated progress bar */}
+                        <div className="mt-2 w-full bg-blue-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
                         </div>
                     </div>
                 )}
