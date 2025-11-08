@@ -173,12 +173,18 @@ class AgentSDK {
         throw new Error(`Agent not found: ${agent_name}`);
       }
 
+      // Generate AI title if initial message provided
+      let title;
+      if (initial_message) {
+        title = await this.generateTitle(initial_message);
+      } else {
+        title = `New ${agentDef.display_name} Conversation`;
+      }
+
       // Create conversation
       const conversation = await AgentConversation.create({
         agent_name,
-        title: initial_message
-          ? this.generateTitle(initial_message)
-          : `New ${agentDef.display_name} Conversation`,
+        title,
         context,
       });
 
@@ -337,9 +343,9 @@ class AgentSDK {
         last_message_date: new Date().toISOString(),
       });
 
-      // Generate title if this is the first exchange and no title set
-      if (conversation.messages.length === 0 && !conversation.title) {
-        const title = this.generateTitle(message);
+      // Generate AI title if this is the first exchange
+      if (conversation.messages.length === 0) {
+        const title = await this.generateTitle(message);
         await AgentConversation.update(conversation_id, { title });
       }
 
@@ -480,36 +486,46 @@ class AgentSDK {
    */
   async generateTitle(message) {
     try {
+      console.log('[AgentSDK] Generating AI title for:', message.substring(0, 100));
+
       // Use AI to generate a concise, descriptive title
       const title = await invokeLLM({
-        prompt: `Generate a short, descriptive title (2-5 words maximum) for a conversation that starts with this message: "${message.substring(0, 200)}"
+        prompt: `Create a short, descriptive title (3-6 words) for this conversation:
 
-Rules:
-- Maximum 5 words
-- No punctuation
-- Descriptive of the topic
-- Title case
-- Example: "SEO Article About Degrees"
-- Example: "Keyword Research Help"
-- Example: "Content Optimization Tips"
+"${message.substring(0, 300)}"
 
-Title:`,
+Requirements:
+- 3-6 words maximum
+- No quotes or punctuation
+- Capture the main topic
+- Title case format
+
+Examples:
+- "SEO Article About Online Degrees"
+- "Keyword Research for Education"
+- "Content Optimization Strategies"
+- "Blog Post Ideas Generation"
+
+Respond with ONLY the title, nothing else:`,
         provider: 'claude',
-        model: 'claude-haiku-4-5-20251001', // Fast model for quick title generation
-        temperature: 0.3, // Low temperature for consistent, concise output
-        maxTokens: 20
+        model: 'claude-sonnet-4-5-20250929', // Use Sonnet for better quality titles
+        temperature: 0.3, // Low temperature for consistent, focused output
+        maxTokens: 30
       });
 
       // Clean up the title - remove quotes, extra whitespace, newlines
       const cleanTitle = title
-        .replace(/["""]/g, '')
-        .replace(/\n/g, ' ')
+        .replace(/["""'`]/g, '')
+        .replace(/[\n\r]+/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim()
-        .substring(0, 60); // Limit to 60 chars max
+        .substring(0, 80); // Limit to 80 chars max
+
+      console.log('[AgentSDK] Generated AI title:', cleanTitle);
 
       return cleanTitle || message.substring(0, 50) + '...';
     } catch (error) {
-      console.warn('Failed to generate AI title, using fallback:', error);
+      console.warn('[AgentSDK] Failed to generate AI title, using fallback:', error);
       // Fallback to simple title if AI fails
       const firstSentence = message.split(/[.!?]/)[0];
       const title = (firstSentence || message).substring(0, 50);
