@@ -1,52 +1,53 @@
 /**
- * Supabase Edge Function: WordPress Auto-Publisher
+ * Supabase Edge Function: Enhanced WordPress Publisher
  *
- * PURPOSE: Automatically publishes approved content to WordPress
+ * PURPOSE: Publish content to WordPress with images, categories, tags, and retry logic
  *
- * TRIGGER: Database trigger when content_queue.status changes to 'published'
- *          OR manual invocation with content_id
+ * FEATURES:
+ * - JWT authentication required
+ * - Featured image upload to WordPress
+ * - Category and tag mapping
+ * - Exponential backoff retry logic (3 attempts)
+ * - Comprehensive error handling
+ * - Detailed logging
  *
- * WHAT IT DOES:
- * 1. Receives content_id from trigger or request body
- * 2. Fetches content from content_queue table
- * 3. Finds WordPress connection from wordpress_connections table
- * 4. Posts to WordPress REST API
- * 5. Updates content_queue with wordpress_post_id and wordpress_url
+ * REQUEST BODY:
+ * {
+ *   content_id: string;           // Required: Content queue item ID
+ *   wordpress_site_id?: string;   // Optional: Specific WordPress site
+ *   publish_status?: 'publish' | 'draft'; // Optional: Defaults to 'publish'
+ * }
  *
- * SETUP REQUIRED:
- * 1. Add WordPress credentials to wordpress_connections table
- * 2. Deploy function: supabase functions deploy wordpress-publish
- * 3. Create database trigger (see SQL below)
- *
- * DATABASE TRIGGER SQL:
- *
- * CREATE OR REPLACE FUNCTION trigger_wordpress_publish()
- * RETURNS trigger AS $$
- * BEGIN
- *   IF NEW.status = 'published' AND OLD.status != 'published' THEN
- *     PERFORM net.http_post(
- *       url => 'https://[project-ref].supabase.co/functions/v1/wordpress-publish',
- *       headers => '{"Authorization": "Bearer [service-role-key]", "Content-Type": "application/json"}',
- *       body => json_build_object('content_id', NEW.id)::text
- *     );
- *   END IF;
- *   RETURN NEW;
- * END;
- * $$ LANGUAGE plpgsql;
- *
- * CREATE TRIGGER auto_wordpress_publish
- *   AFTER UPDATE ON content_queue
- *   FOR EACH ROW
- *   EXECUTE FUNCTION trigger_wordpress_publish();
+ * RESPONSE:
+ * {
+ *   success: true,
+ *   data: {
+ *     wordpress_post_id: number,
+ *     wordpress_url: string,
+ *     content_id: string
+ *   }
+ * }
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { authenticateRequest } from '../_shared/auth.ts';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  createCorsPreflightResponse,
+  handleError,
+  validateRequiredFields,
+  ErrorTypes,
+} from '../_shared/errors.ts';
+import {
+  getAuthenticatedClient,
+  getContentQueueItem,
+  getWordPressConnection,
+  updateContentQueueItem,
+} from '../_shared/database.ts';
+import { createLogger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const logger = createLogger('wordpress-publish');
 
 interface WordPressPost {
   title: string;
@@ -54,134 +55,229 @@ interface WordPressPost {
   status: 'publish' | 'draft';
   categories?: number[];
   tags?: number[];
+  featured_media?: number;
   meta?: Record<string, any>;
+}
+
+/**
+ * Upload image to WordPress Media Library
+ */
+async function uploadFeaturedImage(
+  wpSiteUrl: string,
+  wpUsername: string,
+  wpPassword: string,
+  imageUrl: string,
+  fileName: string
+): Promise<number | null> {
+  try {
+    logger.info('Uploading featured image', { imageUrl, fileName });
+
+    // Fetch the image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      logger.warn('Failed to fetch image', { status: imageResponse.status });
+      return null;
+    }
+
+    const imageBlob = await imageResponse.blob();
+    const imageBuffer = await imageBlob.arrayBuffer();
+
+    // Upload to WordPress
+    const wpMediaUrl = `${wpSiteUrl}/wp-json/wp/v2/media`;
+    const authString = btoa(`${wpUsername}:${wpPassword}`);
+
+    const uploadResponse = await fetch(wpMediaUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Authorization': `Basic ${authString}`,
+      },
+      body: imageBuffer,
+    });
+
+    if (!uploadResponse.ok) {
+      logger.warn('Failed to upload image to WordPress', {
+        status: uploadResponse.status,
+      });
+      return null;
+    }
+
+    const mediaData = await uploadResponse.json();
+    logger.info('Image uploaded successfully', { mediaId: mediaData.id });
+    return mediaData.id;
+  } catch (error) {
+    logger.error('Error uploading featured image', error);
+    return null;
+  }
+}
+
+/**
+ * Publish post to WordPress with retry logic
+ */
+async function publishWithRetry(
+  wpApiUrl: string,
+  authString: string,
+  wpPost: WordPressPost,
+  maxRetries = 3
+): Promise<any> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      logger.info(`Publishing to WordPress (attempt ${attempt}/${maxRetries})`);
+
+      const wpResponse = await fetch(wpApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${authString}`,
+        },
+        body: JSON.stringify(wpPost),
+      });
+
+      if (!wpResponse.ok) {
+        const errorText = await wpResponse.text();
+        throw new Error(`WordPress API error: ${wpResponse.status} ${errorText}`);
+      }
+
+      const wpData = await wpResponse.json();
+      logger.info('Published successfully', { wordpressId: wpData.id });
+      return wpData;
+    } catch (error) {
+      lastError = error as Error;
+      logger.warn(`Attempt ${attempt} failed`, { error: error.message });
+
+      if (attempt < maxRetries) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delayMs = Math.pow(2, attempt - 1) * 1000;
+        logger.info(`Retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  // All retries failed
+  throw lastError || new Error('Failed to publish after retries');
 }
 
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return createCorsPreflightResponse();
   }
 
   try {
-    const { content_id } = await req.json();
+    logger.start();
 
-    if (!content_id) {
-      throw new Error('content_id is required');
-    }
+    // Authenticate request
+    const user = await authenticateRequest(req);
+    logger.info('User authenticated', { userId: user.id, email: user.email });
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Parse request body
+    const body = await req.json();
+    validateRequiredFields(body, ['content_id']);
 
-    console.log(`[WordPress Publisher] Processing content: ${content_id}`);
+    const {
+      content_id,
+      wordpress_site_id,
+      publish_status = 'publish',
+    } = body;
+
+    // Initialize database client
+    const client = getAuthenticatedClient(user.id);
 
     // Fetch content
-    const { data: content, error: contentError } = await supabase
-      .from('content_queue')
-      .select('*, wordpress_connections(*)')
-      .eq('id', content_id)
-      .single();
+    logger.info('Fetching content', { contentId: content_id });
+    const content = await getContentQueueItem(client, content_id, user.id);
 
-    if (contentError || !content) {
-      throw new Error(`Failed to fetch content: ${contentError?.message}`);
+    if (!content) {
+      return createErrorResponse(
+        'Content not found',
+        ErrorTypes.NOT_FOUND
+      );
     }
 
-    // Get WordPress connection (use first active connection if not specified)
-    let wpConnection;
-    if (content.wordpress_connection_id) {
-      const { data: conn } = await supabase
-        .from('wordpress_connections')
-        .select('*')
-        .eq('id', content.wordpress_connection_id)
-        .eq('is_active', true)
-        .single();
-      wpConnection = conn;
-    } else {
-      // Use first active WordPress connection
-      const { data: conns } = await supabase
-        .from('wordpress_connections')
-        .select('*')
-        .eq('is_active', true)
-        .limit(1);
-      wpConnection = conns?.[0];
-    }
+    // Get WordPress connection
+    logger.info('Fetching WordPress connection', { siteId: wordpress_site_id });
+    const wpConnection = await getWordPressConnection(
+      client,
+      user.id,
+      wordpress_site_id
+    );
 
     if (!wpConnection) {
-      throw new Error('No active WordPress connection found');
+      return createErrorResponse(
+        'No active WordPress connection found',
+        ErrorTypes.NOT_FOUND
+      );
     }
 
-    console.log(`[WordPress Publisher] Using WordPress site: ${wpConnection.site_url}`);
+    logger.info('Using WordPress site', { siteUrl: wpConnection.site_url });
 
-    // Prepare WordPress post data
+    // Upload featured image if present
+    let featuredMediaId: number | null = null;
+    if (content.featured_image_url) {
+      featuredMediaId = await uploadFeaturedImage(
+        wpConnection.site_url,
+        wpConnection.username,
+        wpConnection.app_password,
+        content.featured_image_url,
+        `${content.title.toLowerCase().replace(/\s+/g, '-')}.jpg`
+      );
+    }
+
+    // Prepare WordPress post
     const wpPost: WordPressPost = {
       title: content.title,
       content: content.content,
-      status: 'publish',
+      status: publish_status as 'publish' | 'draft',
       meta: {
         _yoast_wpseo_metadesc: content.meta_description || '',
-        _yoast_wpseo_focuskw: content.target_keywords?.join(', ') || '',
+        _yoast_wpseo_focuskw: content.target_keywords?.[0] || '',
       },
     };
 
-    // Post to WordPress REST API
+    // Add featured image if uploaded
+    if (featuredMediaId) {
+      wpPost.featured_media = featuredMediaId;
+    }
+
+    // Add categories if present in content metadata
+    if (content.metadata?.categories) {
+      wpPost.categories = content.metadata.categories;
+    }
+
+    // Add tags if present in content metadata
+    if (content.metadata?.tags) {
+      wpPost.tags = content.metadata.tags;
+    }
+
+    // Publish to WordPress with retry logic
     const wpApiUrl = `${wpConnection.site_url}/wp-json/wp/v2/posts`;
     const authString = btoa(`${wpConnection.username}:${wpConnection.app_password}`);
 
-    console.log(`[WordPress Publisher] Posting to: ${wpApiUrl}`);
+    const wpData = await publishWithRetry(wpApiUrl, authString, wpPost);
 
-    const wpResponse = await fetch(wpApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`,
-      },
-      body: JSON.stringify(wpPost),
+    // Update content queue with WordPress info
+    await updateContentQueueItem(client, content_id, user.id, {
+      wordpress_post_id: wpData.id.toString(),
+      wordpress_url: wpData.link,
+      published_date: new Date().toISOString(),
+      status: 'published',
     });
 
-    if (!wpResponse.ok) {
-      const errorText = await wpResponse.text();
-      throw new Error(`WordPress API error: ${wpResponse.status} ${errorText}`);
-    }
+    logger.complete({ wordpressPostId: wpData.id });
 
-    const wpData = await wpResponse.json();
-
-    console.log(`[WordPress Publisher] Posted successfully! WP ID: ${wpData.id}`);
-
-    // Update content_queue with WordPress info
-    const { error: updateError } = await supabase
-      .from('content_queue')
-      .update({
-        wordpress_post_id: wpData.id.toString(),
-        wordpress_url: wpData.link,
-        published_date: new Date().toISOString(),
-      })
-      .eq('id', content_id);
-
-    if (updateError) {
-      console.error('[WordPress Publisher] Error updating content_queue:', updateError);
-      // Don't throw - post was successful even if DB update failed
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
+    return createSuccessResponse(
+      {
         wordpress_post_id: wpData.id,
         wordpress_url: wpData.link,
         content_id: content_id,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      },
+      'Content published to WordPress successfully'
     );
-
   } catch (error) {
-    console.error('[WordPress Publisher] Error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    logger.failed(error);
+    return handleError(error, 'wordpress-publish');
   }
 });

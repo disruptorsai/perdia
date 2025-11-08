@@ -54,3 +54,10 @@ NEW_DEVICE_SETUP_GUIDE.md
 
 # Auth bypass documentation
 AUTH_DISABLED_FOR_TESTING.md
+
+# Browser Testing Artifacts
+test-results.json
+test-results.md
+screenshots/
+playwright-report/
+.playwright/

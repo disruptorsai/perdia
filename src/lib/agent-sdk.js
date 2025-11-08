@@ -474,15 +474,47 @@ class AgentSDK {
   }
 
   /**
-   * Generate conversation title from first message
+   * Generate conversation title from first message using AI
    * @param {string} message - First message
-   * @returns {string}
+   * @returns {Promise<string>}
    */
-  generateTitle(message) {
-    // Take first 50 characters or first sentence
-    const firstSentence = message.split(/[.!?]/)[0];
-    const title = (firstSentence || message).substring(0, 50);
-    return title + (title.length < message.length ? '...' : '');
+  async generateTitle(message) {
+    try {
+      // Use AI to generate a concise, descriptive title
+      const title = await invokeLLM({
+        prompt: `Generate a short, descriptive title (2-5 words maximum) for a conversation that starts with this message: "${message.substring(0, 200)}"
+
+Rules:
+- Maximum 5 words
+- No punctuation
+- Descriptive of the topic
+- Title case
+- Example: "SEO Article About Degrees"
+- Example: "Keyword Research Help"
+- Example: "Content Optimization Tips"
+
+Title:`,
+        provider: 'claude',
+        model: 'claude-haiku-4-5-20251001', // Fast model for quick title generation
+        temperature: 0.3, // Low temperature for consistent, concise output
+        maxTokens: 20
+      });
+
+      // Clean up the title - remove quotes, extra whitespace, newlines
+      const cleanTitle = title
+        .replace(/["""]/g, '')
+        .replace(/\n/g, ' ')
+        .trim()
+        .substring(0, 60); // Limit to 60 chars max
+
+      return cleanTitle || message.substring(0, 50) + '...';
+    } catch (error) {
+      console.warn('Failed to generate AI title, using fallback:', error);
+      // Fallback to simple title if AI fails
+      const firstSentence = message.split(/[.!?]/)[0];
+      const title = (firstSentence || message).substring(0, 50);
+      return title + (title.length < message.length ? '...' : '');
+    }
   }
 
   /**

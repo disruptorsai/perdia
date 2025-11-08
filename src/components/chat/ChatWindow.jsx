@@ -7,8 +7,9 @@ import ChatMessageBubble from './ChatMessageBubble';
 import ChatInput from './ChatInput';
 import { Hash, Lock, Loader2, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateChatName, isTemporaryChannelName } from '@/lib/chat-utils';
 
-export default function ChatWindow({ channel, currentUser }) {
+export default function ChatWindow({ channel, currentUser, onChannelUpdate }) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentChannel, setCurrentChannel] = useState(channel);
@@ -93,8 +94,11 @@ export default function ChatWindow({ channel, currentUser }) {
 
     const handleSendMessage = async (content) => {
         let channelToUse = currentChannel;
+        const isFirstMessage = messages.length === 0;
+        const shouldAutoName = isTemporaryChannelName(channelToUse?.name);
+
         try {
-            // If it's a new DM, create the channel first
+            // If it's a new DM or channel, create the channel first
             if (channelToUse.isNew) {
                 const newChannel = await ChatChannel.create({
                     name: channelToUse.name,
@@ -105,7 +109,7 @@ export default function ChatWindow({ channel, currentUser }) {
                 channelToUse = newChannel;
                 setCurrentChannel(newChannel); // Update state to persistent channel
             }
-            
+
             const newMessage = await ChatMessage.create({
                 channel_id: channelToUse.id,
                 content,
@@ -113,6 +117,38 @@ export default function ChatWindow({ channel, currentUser }) {
                 sender_name: currentUser.full_name
             });
             setMessages(prev => [...prev, newMessage]);
+
+            // Auto-generate channel name from first message if needed
+            if (isFirstMessage && shouldAutoName) {
+                try {
+                    console.log('[ChatWindow] Generating AI name for channel from first message...');
+                    const aiGeneratedName = await generateChatName(content);
+                    console.log('[ChatWindow] Generated name:', aiGeneratedName);
+
+                    // Update channel name
+                    await ChatChannel.update(channelToUse.id, {
+                        name: aiGeneratedName
+                    });
+
+                    // Update local state
+                    const updatedChannel = {
+                        ...channelToUse,
+                        name: aiGeneratedName
+                    };
+                    setCurrentChannel(updatedChannel);
+
+                    // Notify parent component of the update
+                    if (onChannelUpdate) {
+                        onChannelUpdate(updatedChannel);
+                    }
+
+                    toast.success(`Chat renamed to "${aiGeneratedName}"`);
+                } catch (nameError) {
+                    console.error('[ChatWindow] Failed to auto-name channel:', nameError);
+                    // Don't fail the message send if naming fails
+                    toast.warning('Message sent, but auto-naming failed');
+                }
+            }
         } catch (error) {
             console.error("Error sending message:", error);
             toast.error("Failed to send message.");

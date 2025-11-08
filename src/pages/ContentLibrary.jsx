@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Search, Eye, Edit, Trash2, Loader2, Calendar } from 'lucide-react';
+import { FileText, Search, Eye, Edit, Trash2, Loader2, Calendar, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from 'date-fns';
 import PublishToWordPress from '../components/content/PublishToWordPress';
+import ImageUploadModal from '../components/content/ImageUploadModal';
 
 export default function ContentLibrary() {
   const [content, setContent] = useState([]);
@@ -18,6 +19,8 @@ export default function ContentLibrary() {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedContent, setSelectedContent] = useState(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedArticleForImage, setSelectedArticleForImage] = useState(null);
 
   useEffect(() => {
     loadContent();
@@ -38,7 +41,7 @@ export default function ContentLibrary() {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this content?')) return;
-    
+
     try {
       await ContentQueue.delete(id);
       toast.success('Content deleted');
@@ -46,6 +49,30 @@ export default function ContentLibrary() {
     } catch (error) {
       console.error("Error deleting content:", error);
       toast.error("Failed to delete content");
+    }
+  };
+
+  const handleOpenImageModal = (article) => {
+    setSelectedArticleForImage(article);
+    setImageModalOpen(true);
+  };
+
+  const handleImageAdded = async (imageData) => {
+    try {
+      await ContentQueue.update(selectedArticleForImage.id, {
+        featured_image_url: imageData.url,
+        featured_image_path: imageData.path,
+        featured_image_alt_text: imageData.altText,
+        featured_image_source: imageData.source
+      });
+
+      toast.success('Featured image added successfully!');
+      loadContent();
+      setImageModalOpen(false);
+      setSelectedArticleForImage(null);
+    } catch (error) {
+      console.error('Error adding image:', error);
+      toast.error('Failed to add image');
     }
   };
 
@@ -239,12 +266,21 @@ export default function ContentLibrary() {
                       </div>
                       <div className="flex flex-col gap-2">
                         {(item.status === 'approved' || item.status === 'scheduled') && !item.wordpress_post_id && (
-                          <PublishToWordPress 
-                            content={item} 
+                          <PublishToWordPress
+                            content={item}
                             onPublished={() => loadContent()}
                           />
                         )}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            variant={item.featured_image_url ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => handleOpenImageModal(item)}
+                            className={item.featured_image_url ? "" : "bg-purple-600 hover:bg-purple-700"}
+                          >
+                            <Image className="w-4 h-4 mr-1" />
+                            {item.featured_image_url ? "Change" : "Add"} Image
+                          </Button>
                           <Button variant="outline" size="sm" onClick={() => setSelectedContent(item)}>
                             <Eye className="w-4 h-4 mr-1" />
                             View
@@ -275,13 +311,25 @@ export default function ContentLibrary() {
               </div>
             </CardHeader>
             <CardContent className="p-6 overflow-y-auto max-h-[70vh]">
-              <div 
+              <div
                 className="prose max-w-none"
                 dangerouslySetInnerHTML={{ __html: selectedContent.content }}
               />
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {imageModalOpen && selectedArticleForImage && (
+        <ImageUploadModal
+          isOpen={imageModalOpen}
+          onClose={() => {
+            setImageModalOpen(false);
+            setSelectedArticleForImage(null);
+          }}
+          onImageAdded={handleImageAdded}
+          articleData={selectedArticleForImage}
+        />
       )}
     </div>
   );

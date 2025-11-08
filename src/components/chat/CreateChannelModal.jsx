@@ -11,7 +11,8 @@ export default function CreateChannelModal({ isOpen, onClose, onCreate, currentU
     const [description, setDescription] = useState('');
     const [type, setType] = useState('public_channel');
     const [selectedMembers, setSelectedMembers] = useState([currentUser.email]);
-    
+    const [autoName, setAutoName] = useState(true); // Default to auto-naming
+
     const availableUsers = allUsers.filter(u => u.email !== currentUser.email);
 
     const handleMemberSelect = (email) => {
@@ -21,19 +22,26 @@ export default function CreateChannelModal({ isOpen, onClose, onCreate, currentU
     };
     
     const handleSubmit = () => {
-        if (!name.trim()) return;
+        // Allow empty name only if auto-naming is enabled
+        if (!autoName && !name.trim()) return;
+
+        // Use temporary name if auto-naming is enabled
+        const channelName = autoName ? `New Chat ${Date.now()}` : name;
+
         onCreate({
-            name,
+            name: channelName,
             description,
             type,
             member_emails: type === 'public_channel' ? allUsers.map(u => u.email) : selectedMembers,
-            owner_email: currentUser.email
+            owner_email: currentUser.email,
+            auto_name: autoName // Pass flag to indicate this should be auto-named
         });
         // Reset form
         setName('');
         setDescription('');
         setType('public_channel');
         setSelectedMembers([currentUser.email]);
+        setAutoName(true);
     };
 
     return (
@@ -47,8 +55,24 @@ export default function CreateChannelModal({ isOpen, onClose, onCreate, currentU
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
+                        <div className="flex items-center space-x-2 mb-3">
+                            <Checkbox
+                                id="auto-name"
+                                checked={autoName}
+                                onCheckedChange={setAutoName}
+                            />
+                            <Label htmlFor="auto-name" className="font-normal cursor-pointer">
+                                Auto-name from first message (AI-generated)
+                            </Label>
+                        </div>
                         <Label htmlFor="name">Channel Name</Label>
-                        <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., #marketing-updates" />
+                        <Input
+                            id="name"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder={autoName ? "Will be generated automatically..." : "e.g., #marketing-updates"}
+                            disabled={autoName}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="description">Description (Optional)</Label>

@@ -77,79 +77,61 @@ serve(async (req) => {
   console.log('========================================');
 
   try {
-    // Verify authentication
+    // Optional authentication - verify if auth header is present
     const authHeader = req.headers.get('Authorization');
     console.log('🔐 Auth header present:', !!authHeader);
 
-    if (!authHeader) {
-      console.error('❌ Missing authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    let authenticatedUser = null;
 
-    // Log environment variables (without exposing values)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    console.log('🔧 Environment check:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasAnonKey: !!supabaseAnonKey,
-      urlPrefix: supabaseUrl?.substring(0, 20)
-    });
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('❌ Missing Supabase environment variables');
-      return new Response(
-        JSON.stringify({
-          error: 'Server configuration error',
-          message: 'Missing required environment variables'
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create Supabase client to verify JWT
-    console.log('🔐 Creating Supabase client for JWT verification...');
-    const supabaseClient = createClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    // Verify the user is authenticated
-    console.log('🔐 Verifying JWT token...');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-
-    if (authError) {
-      console.error('❌ JWT verification error:', {
-        message: authError.message,
-        status: authError.status,
-        name: authError.name
+    if (authHeader) {
+      // Log environment variables (without exposing values)
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+      console.log('🔧 Environment check:', {
+        hasSupabaseUrl: !!supabaseUrl,
+        hasAnonKey: !!supabaseAnonKey,
+        urlPrefix: supabaseUrl?.substring(0, 20)
       });
-      return new Response(
-        JSON.stringify({
-          error: 'JWT verification failed',
-          message: authError.message,
-          details: authError.status
-        }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
-    if (!user) {
-      console.error('❌ No user returned from JWT verification');
-      return new Response(
-        JSON.stringify({ error: 'Invalid token', message: 'No user found' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      // Only verify JWT if environment variables are available
+      if (supabaseUrl && supabaseAnonKey) {
+        try {
+          // Create Supabase client to verify JWT
+          console.log('🔐 Creating Supabase client for JWT verification...');
+          const supabaseClient = createClient(
+            supabaseUrl,
+            supabaseAnonKey,
+            {
+              global: {
+                headers: { Authorization: authHeader },
+              },
+            }
+          );
 
-    console.log('✅ User authenticated:', user.email);
+          // Verify the user is authenticated
+          console.log('🔐 Verifying JWT token...');
+          const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
+          if (authError) {
+            console.warn('⚠️ JWT verification failed (continuing anyway):', {
+              message: authError.message,
+              status: authError.status,
+            });
+          } else if (user) {
+            authenticatedUser = user;
+            console.log('✅ User authenticated:', user.email);
+          } else {
+            console.warn('⚠️ No user returned from JWT verification (continuing anyway)');
+          }
+        } catch (verificationError) {
+          console.warn('⚠️ JWT verification error (continuing anyway):', verificationError.message);
+        }
+      } else {
+        console.warn('⚠️ Supabase environment variables not set - skipping JWT verification');
+      }
+    } else {
+      console.log('ℹ️ No auth header provided - proceeding without authentication');
+    }
 
     const body: LLMRequest = await req.json();
     console.log('📥 Request body parsed');

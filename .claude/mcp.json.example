@@ -48,6 +48,17 @@
         "DATAFORSEO_PASSWORD": "your_password"
       },
       "description": "DataForSEO for keyword research and SEO data"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "env": {
+        "PLAYWRIGHT_HEADLESS": "false"
+      },
+      "description": "Playwright for automated browser testing and debugging"
     }
   }
 }

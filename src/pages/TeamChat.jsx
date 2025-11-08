@@ -62,6 +62,17 @@ export default function TeamChat() {
         setActiveChannel(channel);
     };
 
+    const handleChannelUpdate = (updatedChannel) => {
+        // Update the channel in the list
+        setChannels(prev => prev.map(ch =>
+            ch.id === updatedChannel.id ? updatedChannel : ch
+        ));
+        // Update active channel if it's the one that changed
+        if (activeChannel?.id === updatedChannel.id) {
+            setActiveChannel(updatedChannel);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -86,6 +97,7 @@ export default function TeamChat() {
                         key={activeChannel.id}
                         channel={activeChannel}
                         currentUser={currentUser}
+                        onChannelUpdate={handleChannelUpdate}
                     />
                 ) : (
                     <div className="flex-1 flex items-center justify-center bg-slate-50">
