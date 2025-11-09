@@ -24,7 +24,7 @@ export default function ApprovalQueue() {
   const loadQueue = async () => {
     setLoading(true);
     try {
-      const data = await ContentQueue.filter({ status: 'pending_review' }, '-created_date');
+      const data = await ContentQueue.find({ status: 'pending_review' }, { orderBy: { column: 'created_date', ascending: false } });
       setQueue(data);
     } catch (error) {
       console.error("Error loading queue:", error);

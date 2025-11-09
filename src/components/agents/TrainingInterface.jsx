@@ -82,93 +82,6 @@ export default function TrainingInterface({ agent }) {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-900">
-            <AlertCircle className="w-5 h-5" />
-            🚨 Google Quality & Spam Update Requirements
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <p className="font-semibold text-red-800">Critical Requirements for All Content:</p>
-          
-          <div className="bg-white/60 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-blue-700">📏 Content Length (REQUIRED):</p>
-            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
-              <li><strong>Target: 900-1200 words</strong> (~8,000 characters)</li>
-              <li>Do NOT exceed 1200 words (keep focused)</li>
-              <li>Do NOT fall below 900 words (insufficient depth)</li>
-            </ul>
-          </div>
-
-          <div className="bg-white/60 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-purple-700">❓ FAQ Requirements (CRITICAL for AI Overviews):</p>
-            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
-              <li><strong>7-10 questions per article</strong> (increased from 5-7)</li>
-              <li>Use ACTUAL search queries people type</li>
-              <li>Format: Question as H3, Answer as paragraph (150-250 words)</li>
-              <li>Front-load answers (direct response first)</li>
-              <li>Optimize for AI search: ChatGPT, Perplexity, Google AI Overviews</li>
-              <li>Question types: How, What, Is/Are, Can, Cost, Comparison, Practical</li>
-            </ul>
-          </div>
-
-          <div className="bg-white/60 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-red-700">🛡️ E-E-A-T Compliance (Google Quality Standards):</p>
-            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
-              <li><strong>NO fabricated case studies or student examples</strong></li>
-              <li><strong>NO made-up names, outcomes, or testimonials</strong></li>
-              <li>Use ONLY factual, verifiable information</li>
-              <li>Cite real sources (NCES, accreditation bodies, .gov/.edu sites)</li>
-              <li>Reference Perdia's 35+ years experience, 40M+ students served</li>
-              <li>Present balanced perspectives (pros AND cons)</li>
-              <li>Be transparent about affiliations and comparisons</li>
-            </ul>
-          </div>
-
-          <div className="bg-white/60 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-green-700">✅ What TO Include:</p>
-            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
-              <li>Real accreditation bodies: HLC, ACBSP, CCNE, ABET</li>
-              <li>Verified statistics: "According to NCES data..."</li>
-              <li>General factual statements: "Most accredited programs require..."</li>
-              <li>Cited sources and data</li>
-              <li>Balanced, transparent comparisons</li>
-            </ul>
-          </div>
-
-          <div className="bg-white/60 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-red-700">❌ What NOT to Include:</p>
-            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
-              <li>"Maria, a working nurse, completed..." (fabricated examples)</li>
-              <li>Made-up timelines or specific outcomes</li>
-              <li>Fake testimonials or quotes</li>
-              <li>Unverified statistics</li>
-              <li>Overblown claims or guarantees</li>
-            </ul>
-          </div>
-
-          <div className="bg-white/60 rounded-lg p-4 space-y-2">
-            <p className="font-semibold text-orange-700">🤖 Humanization (AI Detection Prevention):</p>
-            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
-              <li>Varied sentence lengths (mix 5-30 word sentences)</li>
-              <li>Contractions & conversational tone (you'll, it's, won't)</li>
-              <li>Rhetorical questions & active voice</li>
-              <li>Occasional grammar "imperfections" (fragments, starting with And/But)</li>
-              <li>Fact-based insights ("In our 35 years reviewing programs...")</li>
-              <li>Varied paragraph lengths (1-6 sentences, not uniform)</li>
-              <li>Avoid AI clichés: "delve into", "landscape", "robust"</li>
-            </ul>
-          </div>
-
-          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-            <p className="text-xs text-blue-800">
-              <strong>Remember:</strong> All content must be factual, human-sounding, 900-1200 words, with 7-10 FAQ questions optimized for AI search. No fabricated examples allowed.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -406,6 +319,93 @@ TONE: Professional, conversational, helpful. Trusted advisor, not corporate broc
             <p className="font-semibold text-blue-800">Production Targets:</p>
             <p className="text-slate-700">• Testing: 2-3 articles/week with human review</p>
             <p className="text-slate-700">• Scaling: 6-8 articles/day, auto-insert shortcodes</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-900">
+            <AlertCircle className="w-5 h-5" />
+            🚨 Google Quality & Spam Update Requirements
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="font-semibold text-red-800">Critical Requirements for All Content:</p>
+
+          <div className="bg-white/60 rounded-lg p-4 space-y-2">
+            <p className="font-semibold text-blue-700">📏 Content Length (REQUIRED):</p>
+            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
+              <li><strong>Target: 900-1200 words</strong> (~8,000 characters)</li>
+              <li>Do NOT exceed 1200 words (keep focused)</li>
+              <li>Do NOT fall below 900 words (insufficient depth)</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-4 space-y-2">
+            <p className="font-semibold text-purple-700">❓ FAQ Requirements (CRITICAL for AI Overviews):</p>
+            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
+              <li><strong>7-10 questions per article</strong> (increased from 5-7)</li>
+              <li>Use ACTUAL search queries people type</li>
+              <li>Format: Question as H3, Answer as paragraph (150-250 words)</li>
+              <li>Front-load answers (direct response first)</li>
+              <li>Optimize for AI search: ChatGPT, Perplexity, Google AI Overviews</li>
+              <li>Question types: How, What, Is/Are, Can, Cost, Comparison, Practical</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-4 space-y-2">
+            <p className="font-semibold text-red-700">🛡️ E-E-A-T Compliance (Google Quality Standards):</p>
+            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
+              <li><strong>NO fabricated case studies or student examples</strong></li>
+              <li><strong>NO made-up names, outcomes, or testimonials</strong></li>
+              <li>Use ONLY factual, verifiable information</li>
+              <li>Cite real sources (NCES, accreditation bodies, .gov/.edu sites)</li>
+              <li>Reference Perdia's 35+ years experience, 40M+ students served</li>
+              <li>Present balanced perspectives (pros AND cons)</li>
+              <li>Be transparent about affiliations and comparisons</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-4 space-y-2">
+            <p className="font-semibold text-green-700">✅ What TO Include:</p>
+            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
+              <li>Real accreditation bodies: HLC, ACBSP, CCNE, ABET</li>
+              <li>Verified statistics: "According to NCES data..."</li>
+              <li>General factual statements: "Most accredited programs require..."</li>
+              <li>Cited sources and data</li>
+              <li>Balanced, transparent comparisons</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-4 space-y-2">
+            <p className="font-semibold text-red-700">❌ What NOT to Include:</p>
+            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
+              <li>"Maria, a working nurse, completed..." (fabricated examples)</li>
+              <li>Made-up timelines or specific outcomes</li>
+              <li>Fake testimonials or quotes</li>
+              <li>Unverified statistics</li>
+              <li>Overblown claims or guarantees</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-4 space-y-2">
+            <p className="font-semibold text-orange-700">🤖 Humanization (AI Detection Prevention):</p>
+            <ul className="list-disc list-inside text-slate-700 space-y-1 ml-2">
+              <li>Varied sentence lengths (mix 5-30 word sentences)</li>
+              <li>Contractions & conversational tone (you'll, it's, won't)</li>
+              <li>Rhetorical questions & active voice</li>
+              <li>Occasional grammar "imperfections" (fragments, starting with And/But)</li>
+              <li>Fact-based insights ("In our 35 years reviewing programs...")</li>
+              <li>Varied paragraph lengths (1-6 sentences, not uniform)</li>
+              <li>Avoid AI clichés: "delve into", "landscape", "robust"</li>
+            </ul>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <p className="text-xs text-blue-800">
+              <strong>Remember:</strong> All content must be factual, human-sounding, 900-1200 words, with 7-10 FAQ questions optimized for AI search. No fabricated examples allowed.
+            </p>
           </div>
         </CardContent>
       </Card>

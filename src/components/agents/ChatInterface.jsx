@@ -7,11 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Loader2, AlertCircle, RefreshCw, Shield } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import AgentThinkingIndicator from './AgentThinkingIndicator';
-import { Client, BlogPost, SocialPost, FileDocument } from '@/lib/perdia-sdk';
+import { Client, ContentQueue, SocialPost, FileDocument } from '@/lib/perdia-sdk';
 import { getCurrentUser } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 
-const CONFIRMATION_SEPARATOR = '---|||---Ready to upload to the library?';
+const CONFIRMATION_SEPARATOR = '---|||---Ready to send to approval?';
 
 export default function ChatInterface({ agent, conversationId, onConversationCreated }) {
     const [conversation, setConversation] = useState(null);
@@ -176,23 +176,42 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             if (title.length > 100) {
                 title = title.substring(0, 97) + '...';
             }
-            
-            await BlogPost.create({
+
+            // Calculate word count
+            const plainText = cleanContent.replace(/<[^>]*>/g, '');
+            const wordCount = plainText.trim().split(/\s+/).length;
+
+            // Extract meta description from first paragraph if available
+            const metaMatch = cleanContent.match(/<p[^>]*>(.*?)<\/p>/);
+            let metaDescription = '';
+            if (metaMatch) {
+                metaDescription = metaMatch[1].replace(/<[^>]*>/g, '').trim();
+                if (metaDescription.length > 155) {
+                    metaDescription = metaDescription.substring(0, 152) + '...';
+                }
+            }
+
+            // Save to content_queue for approval workflow
+            await ContentQueue.create({
                 title: title,
                 content: cleanContent,
-                keywords: clientData?.focus_keywords || '',
-                status: 'Draft',
-                ai_generated: true
+                content_type: 'new_article',
+                status: 'pending_review',
+                target_keywords: clientData?.focus_keywords ? [clientData.focus_keywords] : [],
+                word_count: wordCount,
+                meta_description: metaDescription,
+                agent_name: agent?.name || 'blog_content_writer',
+                automation_mode: 'manual'
             });
 
-            toast.success("Blog post saved to Library", {
-                description: `"${title}" is now available in the Blog Library.`,
+            toast.success("Blog post sent to Approval Queue", {
+                description: `"${title}" is now pending review in the Approval Queue.`,
                 duration: 4000
             });
 
         } catch (error) {
-            console.error("Error saving blog content to library:", error);
-            toast.error("Failed to save to Blog Library", {
+            console.error("Error saving blog content to approval queue:", error);
+            toast.error("Failed to save to Approval Queue", {
                 description: "The blog post couldn't be saved. You can try again.",
                 duration: 6000
             });
@@ -458,7 +477,12 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             <div className="border-b border-slate-200 p-4 bg-white">
                 <h2 className="font-semibold text-slate-900 text-lg flex items-center gap-2">
                     {agentDisplayName}
-                    {(agent?.name === 'blog_content_writer' || socialAgents.includes(agent?.name)) && (
+                    {agent?.name === 'blog_content_writer' && (
+                        <span className="text-sm bg-orange-600 text-white px-2 py-1 rounded-full">
+                            Approval Queue
+                        </span>
+                    )}
+                    {socialAgents.includes(agent?.name) && (
                         <span className="text-sm bg-blue-600 text-white px-2 py-1 rounded-full">
                             Library-Enabled
                         </span>
@@ -598,9 +622,13 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                 )}
                  {showSaveConfirmation && (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm font-semibold text-green-800 text-center sm:text-left">Ready to save to the library?</p>
+                        <p className="text-sm font-semibold text-green-800 text-center sm:text-left">
+                            {agent?.name === 'blog_content_writer' ? 'Ready to send to Approval Queue?' : 'Ready to save to the library?'}
+                        </p>
                         <div className="flex gap-2">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleConfirmation(true)}>Yes, Save</Button>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleConfirmation(true)}>
+                                {agent?.name === 'blog_content_writer' ? 'Yes, Send for Review' : 'Yes, Save'}
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => handleConfirmation(false)}>No, I have changes</Button>
                         </div>
                     </div>

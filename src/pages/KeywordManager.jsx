@@ -46,6 +46,11 @@ export default function KeywordManager() {
   const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Batch view state
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'batches'
+  const [batches, setBatches] = useState([]);
+  const [expandedBatches, setExpandedBatches] = useState(new Set());
+
   // Reset to page 1 when filters or tab changes
   useEffect(() => {
     setCurrentPage(1);
@@ -172,14 +177,136 @@ export default function KeywordManager() {
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this keyword?')) return;
-    
+
     try {
       await Keyword.delete(id);
       toast.success('Keyword deleted');
       loadKeywords();
+      if (viewMode === 'batches') loadBatches();
     } catch (error) {
       console.error("Error deleting keyword:", error);
       toast.error("Failed to delete keyword");
+    }
+  };
+
+  // Batch management functions
+  const loadBatches = async () => {
+    setLoading(true);
+    try {
+      const filters = { list_type: activeTab };
+
+      // Get all keywords for this list type
+      const allKeywords = await Keyword.find(filters, {
+        orderBy: { column: 'batch_date', ascending: false },
+        limit: 1000
+      });
+
+      // Group keywords by batch_id
+      const batchMap = new Map();
+      const noBatchKeywords = [];
+
+      allKeywords.forEach(kw => {
+        if (kw.batch_id) {
+          if (!batchMap.has(kw.batch_id)) {
+            batchMap.set(kw.batch_id, {
+              batch_id: kw.batch_id,
+              batch_name: kw.batch_name,
+              batch_source: kw.batch_source,
+              batch_date: kw.batch_date,
+              batch_starred: kw.batch_starred,
+              keywords: []
+            });
+          }
+          batchMap.get(kw.batch_id).keywords.push(kw);
+        } else {
+          noBatchKeywords.push(kw);
+        }
+      });
+
+      const batchesArray = Array.from(batchMap.values());
+
+      // Add individual keywords without batch as a special group
+      if (noBatchKeywords.length > 0) {
+        batchesArray.push({
+          batch_id: 'no-batch',
+          batch_name: 'Individual Keywords',
+          batch_source: 'manual',
+          batch_date: null,
+          batch_starred: false,
+          keywords: noBatchKeywords
+        });
+      }
+
+      setBatches(batchesArray);
+    } catch (error) {
+      console.error("Error loading batches:", error);
+      toast.error("Failed to load batches");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleBatchExpanded = (batchId) => {
+    setExpandedBatches(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(batchId)) {
+        newSet.delete(batchId);
+      } else {
+        newSet.add(batchId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleStarKeyword = async (keywordId, currentStarred) => {
+    try {
+      await Keyword.update(keywordId, { is_starred: !currentStarred });
+      toast.success(currentStarred ? 'Removed from favorites' : 'Added to favorites');
+      loadKeywords();
+      if (viewMode === 'batches') loadBatches();
+    } catch (error) {
+      console.error("Error starring keyword:", error);
+      toast.error("Failed to update favorite");
+    }
+  };
+
+  const handleStarBatch = async (batchId, currentStarred) => {
+    try {
+      // Update all keywords in the batch
+      const batch = batches.find(b => b.batch_id === batchId);
+      if (!batch) return;
+
+      const updatePromises = batch.keywords.map(kw =>
+        Keyword.update(kw.id, {
+          batch_starred: !currentStarred,
+          is_starred: !currentStarred
+        })
+      );
+
+      await Promise.all(updatePromises);
+      toast.success(currentStarred ? 'Batch removed from favorites' : 'Batch added to favorites');
+      loadBatches();
+    } catch (error) {
+      console.error("Error starring batch:", error);
+      toast.error("Failed to update batch favorite");
+    }
+  };
+
+  const handleDeleteBatch = async (batchId) => {
+    const batch = batches.find(b => b.batch_id === batchId);
+    if (!batch) return;
+
+    if (!confirm(`Delete all ${batch.keywords.length} keywords in batch "${batch.batch_name}"?`)) return;
+
+    try {
+      const deletePromises = batch.keywords.map(kw => Keyword.delete(kw.id));
+      await Promise.all(deletePromises);
+      toast.success(`Deleted batch "${batch.batch_name}"`);
+      loadBatches();
+      loadKeywords();
+    } catch (error) {
+      console.error("Error deleting batch:", error);
+      toast.error("Failed to delete batch");
     }
   };
 
@@ -241,8 +368,13 @@ Provide realistic search volume estimates and difficulty scores. Do not include 
       });
 
       const suggestedKeywords = response.keywords || [];
-      
+
       if (suggestedKeywords.length > 0) {
+        // Generate batch tracking information
+        const batchId = crypto.randomUUID();
+        const batchDate = new Date().toISOString();
+        const batchName = `Keyword Research - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
         const keywordsToCreate = suggestedKeywords.map(kw => ({
           keyword: kw.keyword,
           list_type: 'new_target',
@@ -251,11 +383,18 @@ Provide realistic search volume estimates and difficulty scores. Do not include 
           category: kw.category || 'AI Suggested',
           keyword_type: kw.keyword_type || 'long_tail',
           priority: 3,
-          status: 'queued'
+          status: 'queued',
+          // Batch tracking fields
+          batch_id: batchId,
+          batch_name: batchName,
+          batch_source: 'keyword_researcher_agent',
+          batch_date: batchDate,
+          is_starred: false,
+          batch_starred: false
         }));
 
         await Keyword.bulkCreate(keywordsToCreate);
-        toast.success(`Added ${keywordsToCreate.length} suggested keywords to New Target list!`);
+        toast.success(`Added ${keywordsToCreate.length} keywords in batch: "${batchName}"`);
         setShowSuggestionDialog(false);
         setSuggestionInput('');
         setActiveTab('new_target');

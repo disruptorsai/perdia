@@ -213,6 +213,40 @@ class BaseEntity {
   }
 
   /**
+   * Get single record by ID
+   * @param {string} id - Record ID
+   * @returns {Promise<object|null>}
+   */
+  async get(id) {
+    try {
+      const { user } = await getCurrentUser();
+      if (!user) {
+        console.warn(`[${this.tableName}] No authenticated user - returning null`);
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Not found
+          return null;
+        }
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`Error in ${this.tableName}.get():`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Create new record
    * @param {object} data - Record data
    * @returns {Promise<object>}

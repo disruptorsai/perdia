@@ -203,34 +203,14 @@ Return ONLY the image prompt, nothing else.`,
   const handleSearchStockImages = async () => {
     setSearching(true);
     try {
-      // Generate search query from article
-      const searchQuery = await invokeLLM({
-        prompt: `Based on this article title, generate 1-3 short keywords for searching stock images (just the keywords, comma-separated):
+      // For now, just show a message that stock images are not available
+      // Unsplash's source.unsplash.com doesn't support CORS from browsers
+      // Would need to implement a proper Unsplash integration with API key via Edge Function
+      toast.info('Stock image search temporarily unavailable. Please use Upload or Generate instead.');
 
-Article Title: ${articleData.title}
-
-Return ONLY the search keywords, nothing else. Example: "education, online learning, students"`,
-        provider: 'claude',
-        model: 'claude-haiku-4-5-20251001',
-        temperature: 0.7,
-        maxTokens: 50
-      });
-
-      // Use Unsplash API (free, no key required for basic usage)
-      const response = await fetch(
-        `https://source.unsplash.com/featured/1200x630/?${encodeURIComponent(searchQuery.trim())}`
-      );
-
-      if (response.ok) {
-        setStockImages([{
-          id: Date.now(),
-          url: response.url,
-          altText: `${articleData.title} - Stock Image`
-        }]);
-        toast.success('Stock image found!');
-      } else {
-        throw new Error('Failed to fetch stock image');
-      }
+      // Alternative: Just redirect users to use AI generation
+      setActiveTab('generate');
+      toast.info('Try AI Image Generation instead - it creates custom images for your article!');
     } catch (error) {
       console.error('Stock search error:', error);
       toast.error('Failed to find stock images');
