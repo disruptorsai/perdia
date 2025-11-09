@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, MessageSquare, Loader2, Trash2, Bot } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
+import AgentInfoCard from './AgentInfoCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +60,7 @@ export default function ChatHistoryPanel({
         <div className="p-4 border-b space-y-4">
           <div className="space-y-3">
             <div>
-              <h3 className="text-sm font-semibold text-slate-600 mb-1 font-sans">Select Agent</h3>
+              <h3 className="text-sm font-semibold text-slate-600 mb-2 font-sans">Select Agent</h3>
               <Select value={selectedAgent?.name || ''} onValueChange={onAgentChange}>
                 <SelectTrigger className="w-full bg-white shadow-sm border-slate-200 h-11">
                   <div className="flex items-center gap-2">
@@ -76,11 +77,9 @@ export default function ChatHistoryPanel({
                 </SelectContent>
               </Select>
             </div>
-            
+
             {selectedAgent && (
-              <div className="text-xs text-slate-500 bg-slate-100 p-2 rounded-md">
-                {selectedAgent.description}
-              </div>
+              <AgentInfoCard agent={selectedAgent} compact={true} />
             )}
           </div>
           
