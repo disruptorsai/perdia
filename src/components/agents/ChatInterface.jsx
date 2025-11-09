@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Loader2, AlertCircle, RefreshCw, Shield } from 'lucide-react';
 import MessageBubble from './MessageBubble';
+import AgentThinkingIndicator from './AgentThinkingIndicator';
 import { Client, BlogPost, SocialPost, FileDocument } from '@/lib/perdia-sdk';
 import { getCurrentUser } from '@/lib/supabase-client';
 import { toast } from 'sonner';
@@ -588,21 +589,12 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             </ScrollArea>
 
             <div className="border-t border-slate-200 p-4 bg-white">
-                 {/* AI Processing Indicator - More Prominent */}
+                 {/* AI Processing Indicator with Agent-Specific Messages */}
                  {isAgentThinking && (
-                    <div className="mb-3">
-                        <div className="flex items-center justify-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-                            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                            <div className="flex flex-col flex-1">
-                                <p className="text-sm font-semibold text-blue-900">AI Agent is thinking...</p>
-                                <p className="text-xs text-blue-700">Generating response using {agentDisplayName}</p>
-                            </div>
-                        </div>
-                        {/* Animated progress bar */}
-                        <div className="mt-2 w-full bg-blue-100 rounded-full h-1.5 overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]" />
-                        </div>
-                    </div>
+                    <AgentThinkingIndicator
+                        agent={agent}
+                        agentDisplayName={agentDisplayName}
+                    />
                 )}
                  {showSaveConfirmation && (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
