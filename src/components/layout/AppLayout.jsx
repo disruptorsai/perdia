@@ -82,11 +82,18 @@ function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold text-primary">Perdia Education</h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
-            SEO AUTOMATION • EMMA™
-          </p>
+        <div className="flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="Perdia Education Logo"
+            className="h-10 w-auto"
+          />
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold text-primary">Perdia Education</h1>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              SEO AUTOMATION • EMMA™
+            </p>
+          </div>
         </div>
       </SidebarHeader>
 
@@ -163,6 +170,11 @@ export default function AppLayout({ children }) {
             <SidebarTrigger>
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
+            <img
+              src="/logo.png"
+              alt="Perdia Education Logo"
+              className="h-8 w-auto"
+            />
             <div className="flex flex-col">
               <h1 className="text-lg font-bold text-primary">Perdia Education</h1>
             </div>
