@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +35,9 @@ export default function SocialPostEditorModal({ post, onSave, onClose }) {
                         <Share2 className="w-5 h-5 text-sky-600" />
                         Edit Social Post for <span className="capitalize">{post.channel}</span>
                     </DialogTitle>
+                    <DialogDescription>
+                        Edit the content and status of your {post.channel} post
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">

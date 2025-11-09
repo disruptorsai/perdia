@@ -12,7 +12,7 @@ import { getCurrentUser, supabase } from '@/lib/supabase-client';
 import Login from './Login';
 import Signup from './Signup';
 import Dashboard from './Dashboard';
-import AIAgents from './AIAgents';
+import AIContentEngine from './AIContentEngine';
 import KeywordManager from './KeywordManager';
 import ContentLibrary from './ContentLibrary';
 import ContentEditor from './ContentEditor';
@@ -97,7 +97,7 @@ export default function Pages() {
               <AppLayout>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
-                  <Route path="/ai-agents" element={<AIAgents />} />
+                  <Route path="/ai-content-engine" element={<AIContentEngine />} />
                   <Route path="/keywords" element={<KeywordManager />} />
                   <Route path="/content" element={<ContentLibrary />} />
                   <Route path="/content/edit/:id" element={<ContentEditor />} />

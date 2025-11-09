@@ -1,168 +1,170 @@
 import React, { useState, useEffect } from 'react';
-import { agentSDK } from '@/lib/agent-sdk';
-import { AgentFeedback } from '@/lib/perdia-sdk';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Star } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { cn } from "@/lib/utils";
 
-export default function FeedbackLoop({ agentName }) {
+const FeedbackLoop = () => {
   const [conversations, setConversations] = useState([]);
-  const [selectedConversationId, setSelectedConversationId] = useState('');
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [rating, setRating] = useState(0);
   const [comments, setComments] = useState('');
   const [correctedResponse, setCorrectedResponse] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    const loadConversations = async () => {
-      try {
-        const convos = await agentSDK.listConversations({ agent_name: agentName });
-        setConversations(convos);
-      } catch (error) {
-        console.error("Error loading conversations:", error);
+    const fetchConversations = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('agent_conversations')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (data) {
+          setConversations(data);
+        } else {
+          console.error('Error fetching conversations:', error);
+        }
       }
     };
-    loadConversations();
-  }, [agentName]);
-  
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
-  const assistantMessages = selectedConversation?.messages.filter(m => m.role === 'assistant' && m.content) || [];
+    fetchConversations();
+  }, []);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      const fetchMessages = async () => {
+        const { data, error } = await supabase
+          .from('agent_messages')
+          .select('*')
+          .eq('conversation_id', selectedConversation.id);
+
+        if (data) {
+          setMessages(data);
+        } else {
+          console.error('Error fetching messages:', error);
+        }
+      };
+      fetchMessages();
+    }
+  }, [selectedConversation]);
 
   const handleSubmitFeedback = async () => {
-    if (!selectedMessage || rating === 0) {
-      toast({
-        title: "Incomplete Feedback",
-        description: "Please select a message and provide a rating.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!selectedMessage || !rating) return;
 
-    try {
-      await AgentFeedback.create({
-        agent_name: agentName,
-        conversation_id: selectedConversationId,
-        message_id: selectedMessage.id, // Assuming messages have IDs
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase.from('agent_feedback').insert({
+        user_id: user.id,
+        agent_name: selectedConversation.agent_name,
+        conversation_id: selectedConversation.id,
+        message_id: selectedMessage.id,
         rating,
-        corrected_response: correctedResponse,
-        comments,
+        feedback_text: comments,
+        // corrected_response: correctedResponse, // This column doesn't exist in the schema
       });
 
-      toast({
-        title: "Feedback Submitted",
-        description: "Thank you! Your feedback helps improve the agent.",
-      });
-      
-      // Reset form
-      setSelectedConversationId('');
-      setSelectedMessage(null);
-      setRating(0);
-      setComments('');
-      setCorrectedResponse('');
-
-    } catch(error) {
-      console.error("Error submitting feedback:", error);
-      toast({
-        title: "Submission Failed",
-        description: "Could not submit feedback. Please try again.",
-        variant: "destructive",
-      });
+      if (error) {
+        toast({
+          title: 'Error',
+          description: `Failed to submit feedback: ${error.message}`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Feedback submitted successfully.',
+        });
+        // Reset form
+        setSelectedConversation(null);
+        setSelectedMessage(null);
+        setRating(0);
+        setComments('');
+        setCorrectedResponse('');
+      }
     }
+    setLoading(false);
   };
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-      <CardHeader>
-        <CardTitle>Provide Feedback on Agent Responses</CardTitle>
-        <CardDescription>
-          Your feedback is crucial for improving the agent's performance. Select a recent conversation and a specific agent response to review.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="conversation-select">1. Select a Conversation</Label>
-          <Select value={selectedConversationId} onValueChange={setSelectedConversationId}>
-            <SelectTrigger id="conversation-select">
-              <SelectValue placeholder="Choose a conversation..." />
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Feedback Loop</h2>
+      <div className="space-y-4">
+        <Select onValueChange={(value) => setSelectedConversation(conversations.find(c => c.id === value))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a conversation" />
+          </SelectTrigger>
+          <SelectContent>
+            {conversations.map(convo => (
+              <SelectItem key={convo.id} value={convo.id}>
+                {convo.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {selectedConversation && (
+          <Select onValueChange={(value) => setSelectedMessage(messages.find(m => m.id === value))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a message" />
             </SelectTrigger>
             <SelectContent>
-              {conversations.map(convo => (
-                <SelectItem key={convo.id} value={convo.id}>
-                  {convo.metadata?.name || `Conversation ${convo.id.slice(0, 6)}`}
+              {messages.map(msg => (
+                <SelectItem key={msg.id} value={msg.id}>
+                  {msg.content.substring(0, 50)}...
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        {selectedConversation && (
-          <div className="space-y-2">
-            <Label htmlFor="message-select">2. Select an Agent Response to Review</Label>
-            <Select onValueChange={(msgId) => setSelectedMessage(assistantMessages.find(m => m.id === msgId))}>
-              <SelectTrigger id="message-select">
-                <SelectValue placeholder="Choose a message..." />
-              </SelectTrigger>
-              <SelectContent>
-                {assistantMessages.map((msg, idx) => (
-                  <SelectItem key={msg.id || idx} value={msg.id}>
-                    <p className="truncate pr-4">{`Response: "${msg.content.slice(0, 50)}..."`}</p>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         )}
-        
+
         {selectedMessage && (
-            <div className="p-4 border rounded-md bg-slate-50">
-                <p className="font-semibold text-sm mb-2">Selected Response:</p>
-                <p className="text-sm text-slate-700 italic">"{selectedMessage.content}"</p>
+          <>
+            <div>
+              <label className="font-bold">Rating</label>
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <span
+                    key={star}
+                    onClick={() => setRating(star)}
+                    className={`cursor-pointer text-2xl ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
             </div>
+            <div>
+              <label htmlFor="comments" className="font-bold">Comments</label>
+              <Textarea
+                id="comments"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                placeholder="Provide your feedback here..."
+              />
+            </div>
+            {/* <div>
+              <label htmlFor="correctedResponse" className="font-bold">Corrected Response (Optional)</label>
+              <Textarea
+                id="correctedResponse"
+                value={correctedResponse}
+                onChange={(e) => setCorrectedResponse(e.target.value)}
+                placeholder="Provide an ideal response..."
+              />
+            </div> */}
+            <Button onClick={handleSubmitFeedback} disabled={loading}>
+              {loading ? 'Submitting...' : 'Submit Feedback'}
+            </Button>
+          </>
         )}
-
-        <div className="space-y-2">
-          <Label>3. Rate the Response</Label>
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map(star => (
-              <Button key={star} variant="ghost" size="icon" onClick={() => setRating(star)}>
-                <Star className={cn("w-6 h-6", rating >= star ? "text-yellow-400 fill-yellow-400" : "text-slate-300")} />
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="corrected-response">4. (Optional) Provide a Corrected or Better Response</Label>
-          <Textarea
-            id="corrected-response"
-            value={correctedResponse}
-            onChange={(e) => setCorrectedResponse(e.target.value)}
-            placeholder="What the agent should have said..."
-            rows={5}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="comments">5. (Optional) Additional Comments</Label>
-          <Textarea
-            id="comments"
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-            placeholder="Explain why the response was good or bad..."
-            rows={3}
-          />
-        </div>
-
-        <Button onClick={handleSubmitFeedback} disabled={!selectedMessage || rating === 0}>
-          Submit Feedback
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
-}
+};
+
+export default FeedbackLoop;

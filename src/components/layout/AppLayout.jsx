@@ -37,7 +37,7 @@ const navigationItems = [
   },
   {
     title: 'AI Content Engine',
-    url: '/ai-agents',
+    url: '/ai-content-engine',
     icon: BrainCircuit,
   },
   {
@@ -87,7 +87,7 @@ function AppSidebar() {
           <img
             src="/logo.png"
             alt="Perdia Education Logo"
-            className="h-80 w-auto"
+            className="h-10 w-auto"
           />
         </div>
       </SidebarHeader>
@@ -171,7 +171,7 @@ export default function AppLayout({ children }) {
             <img
               src="/logo.png"
               alt="Perdia Education Logo"
-              className="h-28 w-auto"
+              className="h-10 w-auto"
             />
             <div className="ml-auto">
               <HelpMenu />

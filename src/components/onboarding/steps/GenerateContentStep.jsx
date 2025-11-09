@@ -75,8 +75,8 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
         target_keywords: [keyword],
         word_count: aiResponse.content.split(/\s+/).length,
         meta_description: `Discover everything you need to know about ${keyword}. Comprehensive guide with expert insights.`,
-        agent_used: 'seo_content_writer',
-        conversation_id: conversation.id,
+        agent_name: 'seo_content_writer',
+        automation_mode: 'manual'
       });
 
       setProgress(100);

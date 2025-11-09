@@ -303,6 +303,17 @@ class AgentSDK {
       // Get agent definition
       const agentDef = conversation.agent_definition;
 
+      // Fetch training data and knowledge base content
+      const trainingData = await this.getClientTrainingData();
+      const knowledgeContent = await this.getKnowledgeBaseContent(agentDef.agent_name);
+
+      // Build enhanced system prompt
+      const enhancedSystemPrompt = this.buildEnhancedSystemPrompt(
+        agentDef.system_prompt,
+        trainingData,
+        knowledgeContent
+      );
+
       // Save user message
       const userMessage = await AgentMessage.create({
         conversation_id,
@@ -323,7 +334,7 @@ class AgentSDK {
       const assistantResponse = await invokeLLM({
         provider: provider || agentDef.default_model?.includes('gpt') ? 'openai' : 'claude',
         model: model || agentDef.default_model,
-        systemPrompt: agentDef.system_prompt,
+        systemPrompt: enhancedSystemPrompt,
         messages: messageHistory,
         temperature: agentDef.temperature || 0.7,
         maxTokens: agentDef.max_tokens || 4000,
@@ -458,6 +469,120 @@ class AgentSDK {
     } catch (error) {
       console.error('Error updating agent definition:', error);
       throw error;
+    }
+  }
+
+  // ===================================================
+  // CONTEXT BUILDING METHODS
+  // ===================================================
+
+  /**
+   * Fetch client training data (focus_keywords, ai_writing_directives)
+   * @returns {Promise<object>} { focus_keywords, ai_writing_directives }
+   */
+  async getClientTrainingData() {
+    try {
+      const { user } = await getCurrentUser();
+      if (!user) {
+        return { focus_keywords: '', ai_writing_directives: '' };
+      }
+
+      const { data, error } = await supabase
+        .from('automation_settings')
+        .select('focus_keywords, ai_writing_directives')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') { // No rows found
+          return { focus_keywords: '', ai_writing_directives: '' };
+        }
+        throw error;
+      }
+
+      return {
+        focus_keywords: data.focus_keywords || '',
+        ai_writing_directives: data.ai_writing_directives || ''
+      };
+    } catch (error) {
+      console.error('[AgentSDK] Error fetching client training data:', error);
+      return { focus_keywords: '', ai_writing_directives: '' };
+    }
+  }
+
+  /**
+   * Build enhanced system prompt with training data and knowledge base
+   * @param {string} basePrompt - Base agent system prompt
+   * @param {object} trainingData - Client training data
+   * @param {Array} knowledgeContent - Knowledge base file contents
+   * @returns {string} Enhanced system prompt
+   */
+  buildEnhancedSystemPrompt(basePrompt, trainingData = {}, knowledgeContent = []) {
+    let enhancedPrompt = basePrompt;
+    
+    // Add training data section if available
+    const hasTrainingData = trainingData.focus_keywords || trainingData.ai_writing_directives;
+    if (hasTrainingData) {
+      enhancedPrompt += '\n\n=== CLIENT TRAINING DATA ===';
+      
+      if (trainingData.focus_keywords) {
+        enhancedPrompt += `\n\nFOCUS KEYWORDS:\n${trainingData.focus_keywords}`;
+      }
+      
+      if (trainingData.ai_writing_directives) {
+        enhancedPrompt += `\n\nWRITING DIRECTIVES:\n${trainingData.ai_writing_directives}`;
+      }
+      
+      enhancedPrompt += '\n\nIMPORTANT: The focus keywords and writing directives above are GLOBAL guidelines that apply to ALL content generation. Always incorporate these directives into your responses.';
+    }
+    
+    // Add knowledge base section if available
+    if (knowledgeContent && knowledgeContent.length > 0) {
+      enhancedPrompt += '\n\n=== KNOWLEDGE BASE CONTEXT ===';
+      enhancedPrompt += '\nThe following reference materials are available for context. Use this information to provide accurate, relevant responses:\n';
+      
+      knowledgeContent.forEach((file, index) => {
+        enhancedPrompt += `\n[REFERENCE ${index + 1}: ${file.filename || 'Unknown File'}]\n`;
+        enhancedPrompt += `${file.content}\n`;
+        enhancedPrompt += `[END REFERENCE ${index + 1}]\n`;
+      });
+      
+      enhancedPrompt += '\nWhen generating content, reference specific details from these knowledge base files when relevant.';
+    }
+    
+    return enhancedPrompt;
+  }
+
+  async getKnowledgeBaseContent(agent_name) {
+    try {
+      const { user } = await getCurrentUser();
+      if (!user) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('knowledge_base_documents')
+        .select('file_name, file_url')
+        .eq('user_id', user.id)
+        .or(`agent_name.eq.${agent_name},agent_name.is.null`);
+
+      if (error) {
+        throw error;
+      }
+
+      const contentPromises = data.map(async (doc) => {
+        const response = await fetch(doc.file_url);
+        if (response.ok) {
+          const content = await response.text();
+          return { filename: doc.file_name, content };
+        }
+        return null;
+      });
+
+      return (await Promise.all(contentPromises)).filter(Boolean);
+    } catch (error) {
+      console.error('[AgentSDK] Error fetching knowledge base content:', error);
+      return [];
     }
   }
 
