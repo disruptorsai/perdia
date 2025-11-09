@@ -14,15 +14,7 @@ import {
   ANIMATIONS,
 } from '@/lib/onboarding-config';
 import { ChevronDown, ChevronUp, X, Sparkles, Trophy, Target } from 'lucide-react';
-
-// Lazy load confetti
-let Confetti = null;
-try {
-  const confettiModule = await import('react-confetti');
-  Confetti = confettiModule.default;
-} catch (err) {
-  console.log('react-confetti not installed - milestone celebrations disabled');
-}
+import Confetti from 'react-confetti';
 
 /**
  * DiscoveryChecklist - Dashboard widget with 10 optional learning tasks
@@ -96,7 +88,7 @@ export default function DiscoveryChecklist() {
       <AnimatePresence>
         {showMilestone && (
           <>
-            {Confetti && (
+            {typeof window !== 'undefined' && (
               <div className="fixed inset-0 pointer-events-none z-50">
                 <Confetti
                   width={window.innerWidth}

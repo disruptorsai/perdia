@@ -6,17 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { COMPLETE_CONTENT, ANIMATIONS } from '@/lib/onboarding-config';
 import { CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
-
-// Lazy load confetti (will fail gracefully if not installed)
-let Confetti = null;
-try {
-  // This will be available after running: npm install react-confetti
-  const confettiModule = await import('react-confetti');
-  Confetti = confettiModule.default;
-} catch (err) {
-  // Confetti not installed, will use alternative celebration
-  console.log('react-confetti not installed - using alternative celebration');
-}
+import Confetti from 'react-confetti';
 
 /**
  * CompleteStep - Onboarding completion celebration
@@ -26,12 +16,14 @@ export default function CompleteStep({ onComplete, onboardingData }) {
   const navigate = useNavigate();
   const [showConfetti, setShowConfetti] = useState(true);
   const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: typeof window !== 'undefined' ? window.innerWidth : 1920,
+    height: typeof window !== 'undefined' ? window.innerHeight : 1080,
   });
 
   // Update window size for confetti
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
@@ -75,7 +67,7 @@ export default function CompleteStep({ onComplete, onboardingData }) {
   return (
     <div className="max-w-3xl mx-auto relative">
       {/* Confetti Animation */}
-      {Confetti && showConfetti && (
+      {typeof window !== 'undefined' && showConfetti && (
         <Confetti
           width={windowSize.width}
           height={windowSize.height}
@@ -86,7 +78,7 @@ export default function CompleteStep({ onComplete, onboardingData }) {
       )}
 
       {/* Celebration Animation (fallback if no confetti) */}
-      {!Confetti && showConfetti && (
+      {typeof window === 'undefined' && showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50">
           {[...Array(20)].map((_, i) => (
             <motion.div
