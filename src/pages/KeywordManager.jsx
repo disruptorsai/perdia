@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Download, Search, Key, Loader2, Trash2, Plus, TrendingUp, Sparkles, ArrowUpDown, Target, ListChecks, PenSquare, RefreshCw } from 'lucide-react';
+import { Upload, Download, Search, Key, Loader2, Trash2, Plus, TrendingUp, Sparkles, ArrowUpDown, Target, ListChecks, PenSquare, RefreshCw, Star, ChevronDown, ChevronRight, Package, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,8 +57,12 @@ export default function KeywordManager() {
   }, [activeTab, filterStatus, filterPriority, filterCategory, sortBy, sortDirection, searchQuery]);
 
   useEffect(() => {
-    loadKeywords();
-  }, [activeTab, currentPage, pageSize, filterStatus, filterPriority, filterCategory, sortBy, sortDirection, searchQuery]);
+    if (viewMode === 'table') {
+      loadKeywords();
+    } else {
+      loadBatches();
+    }
+  }, [activeTab, currentPage, pageSize, filterStatus, filterPriority, filterCategory, sortBy, sortDirection, searchQuery, viewMode]);
 
   const loadKeywords = async () => {
     setLoading(true);
@@ -644,6 +648,148 @@ Format:
   // Categories are loaded from current page only (for filter dropdown)
   const categories = [...new Set(keywords.map(kw => kw.category).filter(Boolean))];
 
+  const BatchView = () => (
+    <div className="space-y-4">
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        </div>
+      ) : batches.length === 0 ? (
+        <div className="text-center py-12">
+          <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Batches Yet</h3>
+          <p className="text-slate-500 mb-4">
+            Use the AI Keyword Suggestions tool to generate batches of keywords
+          </p>
+        </div>
+      ) : (
+        batches.map((batch) => {
+          const isExpanded = expandedBatches.has(batch.batch_id);
+          const batchDate = batch.batch_date ? new Date(batch.batch_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+
+          return (
+            <Card key={batch.batch_id} className={`border-l-4 ${batch.batch_starred ? 'border-yellow-500 bg-yellow-50/30' : 'border-slate-300'}`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleBatchExpanded(batch.batch_id)}
+                      className="p-1 h-8 w-8"
+                    >
+                      {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                    </Button>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{batch.batch_name}</CardTitle>
+                        <Badge variant="outline" className="text-xs">
+                          {batch.keywords.length} keywords
+                        </Badge>
+                        {batch.batch_source === 'keyword_researcher_agent' && (
+                          <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
+                            AI Generated
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500 mt-1">{batchDate}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStarBatch(batch.batch_id, batch.batch_starred)}
+                      className={batch.batch_starred ? 'text-yellow-500 hover:text-yellow-600' : 'hover:text-yellow-500'}
+                    >
+                      <Star className={`h-5 w-5 ${batch.batch_starred ? 'fill-current' : ''}`} />
+                    </Button>
+                    {batch.batch_id !== 'no-batch' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteBatch(batch.batch_id)}
+                        className="hover:text-red-500"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+
+              {isExpanded && (
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    {batch.keywords.map((keyword) => (
+                      <div
+                        key={keyword.id}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-slate-900">{keyword.keyword}</span>
+                            {keyword.category && (
+                              <Badge variant="outline" className="text-xs">{keyword.category}</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
+                            <span>Vol: {keyword.search_volume?.toLocaleString() || '—'}</span>
+                            <span>Diff: {keyword.difficulty || '—'}</span>
+                            <Badge variant={keyword.status === 'completed' ? 'default' : 'outline'} className="text-xs">
+                              {keyword.status}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateArticle(keyword)}
+                            disabled={generatingArticle === keyword.id || keyword.status === 'completed'}
+                            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
+                          >
+                            {generatingArticle === keyword.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <PenSquare className="w-4 h-4 mr-1" />
+                                Generate
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStarKeyword(keyword.id, keyword.is_starred)}
+                            className={keyword.is_starred ? 'text-yellow-500' : ''}
+                          >
+                            <Star className={`h-4 w-4 ${keyword.is_starred ? 'fill-current' : ''}`} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(keyword.id)}
+                            className="hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })
+      )}
+    </div>
+  );
+
   const KeywordTable = ({ keywords: displayKeywords, listType }) => (
     <>
       {loading ? (
@@ -865,7 +1011,29 @@ Format:
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <CardTitle>Currently Ranked Keywords ({keywords.length})</CardTitle>
+                <div className="flex items-center gap-3">
+                  <CardTitle>Currently Ranked Keywords ({viewMode === 'table' ? keywords.length : batches.reduce((acc, b) => acc + b.keywords.length, 0)})</CardTitle>
+                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                      className="h-7 px-2"
+                    >
+                      <TableIcon className="h-4 w-4 mr-1" />
+                      Table
+                    </Button>
+                    <Button
+                      variant={viewMode === 'batches' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('batches')}
+                      className="h-7 px-2"
+                    >
+                      <Package className="h-4 w-4 mr-1" />
+                      Batches
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                   <div className="relative flex-1 sm:flex-initial">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -918,14 +1086,20 @@ Format:
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <KeywordTable keywords={keywords} listType="currently_ranked" />
-              <DataPagination
-                currentPage={currentPage}
-                pageSize={pageSize}
-                totalCount={totalCount}
-                onPageChange={(page) => setCurrentPage(page)}
-                onPageSizeChange={(size) => setPageSize(size)}
-              />
+              {viewMode === 'table' ? (
+                <>
+                  <KeywordTable keywords={keywords} listType="currently_ranked" />
+                  <DataPagination
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    totalCount={totalCount}
+                    onPageChange={(page) => setCurrentPage(page)}
+                    onPageSizeChange={(size) => setPageSize(size)}
+                  />
+                </>
+              ) : (
+                <BatchView />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1022,7 +1196,29 @@ Format:
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <CardTitle>New Target Keywords ({keywords.length})</CardTitle>
+                <div className="flex items-center gap-3">
+                  <CardTitle>New Target Keywords ({viewMode === 'table' ? keywords.length : batches.reduce((acc, b) => acc + b.keywords.length, 0)})</CardTitle>
+                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                      className="h-7 px-2"
+                    >
+                      <TableIcon className="h-4 w-4 mr-1" />
+                      Table
+                    </Button>
+                    <Button
+                      variant={viewMode === 'batches' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('batches')}
+                      className="h-7 px-2"
+                    >
+                      <Package className="h-4 w-4 mr-1" />
+                      Batches
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                   <div className="relative flex-1 sm:flex-initial">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -1075,14 +1271,20 @@ Format:
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <KeywordTable keywords={keywords} listType="new_target" />
-              <DataPagination
-                currentPage={currentPage}
-                pageSize={pageSize}
-                totalCount={totalCount}
-                onPageChange={(page) => setCurrentPage(page)}
-                onPageSizeChange={(size) => setPageSize(size)}
-              />
+              {viewMode === 'table' ? (
+                <>
+                  <KeywordTable keywords={keywords} listType="new_target" />
+                  <DataPagination
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    totalCount={totalCount}
+                    onPageChange={(page) => setCurrentPage(page)}
+                    onPageSizeChange={(size) => setPageSize(size)}
+                  />
+                </>
+              ) : (
+                <BatchView />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
