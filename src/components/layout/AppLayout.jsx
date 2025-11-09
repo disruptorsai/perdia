@@ -87,7 +87,7 @@ function AppSidebar() {
           <img
             src="/logo.png"
             alt="Perdia Education Logo"
-            className="h-10 w-auto"
+            className="w-full h-auto max-w-xs"
           />
         </div>
       </SidebarHeader>
@@ -171,7 +171,7 @@ export default function AppLayout({ children }) {
             <img
               src="/logo.png"
               alt="Perdia Education Logo"
-              className="h-10 w-auto"
+              className="h-auto w-48 max-w-full"
             />
             <div className="ml-auto">
               <HelpMenu />
