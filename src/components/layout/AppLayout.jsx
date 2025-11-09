@@ -27,6 +27,7 @@ import {
   Badge
 } from '@/components/ui';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import HelpMenu from '@/components/onboarding/HelpMenu';
 
 const navigationItems = [
   {
@@ -81,12 +82,12 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-4">
+      <SidebarHeader className="border-b px-6 py-12">
         <div className="flex items-center justify-center">
           <img
             src="/logo.png"
             alt="Perdia Education Logo"
-            className="h-16 w-auto"
+            className="h-80 w-auto"
           />
         </div>
       </SidebarHeader>
@@ -147,6 +148,9 @@ function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <div className="px-3 py-2">
+          <HelpMenu />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
@@ -160,15 +164,18 @@ export default function AppLayout({ children }) {
 
         <div className="flex-1 flex flex-col">
           {/* Mobile header */}
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:hidden">
+          <header className="sticky top-0 z-30 flex h-32 items-center gap-4 border-b bg-background px-4 md:hidden">
             <SidebarTrigger>
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
             <img
               src="/logo.png"
               alt="Perdia Education Logo"
-              className="h-12 w-auto"
+              className="h-28 w-auto"
             />
+            <div className="ml-auto">
+              <HelpMenu />
+            </div>
           </header>
 
           {/* Main content */}

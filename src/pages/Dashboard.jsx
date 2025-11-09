@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Spinner } from '@/components/ui';
 import { PerformanceMetric, Keyword, ContentQueue } from '@/lib/perdia-sdk';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
+import DiscoveryChecklist from '@/components/onboarding/DiscoveryChecklist';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -24,9 +27,24 @@ export default function Dashboard() {
   const [keywordsQueued, setKeywordsQueued] = useState(0);
   const [pendingReview, setPendingReview] = useState(0);
 
+  // Onboarding state
+  const { onboardingCompleted } = useOnboarding();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Show onboarding wizard on first visit
+  useEffect(() => {
+    if (!onboardingCompleted) {
+      // Delay showing wizard slightly to allow page to load
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [onboardingCompleted]);
 
   const loadDashboardData = async () => {
     try {
@@ -230,6 +248,9 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Discovery Checklist */}
+        {onboardingCompleted && <DiscoveryChecklist />}
+
         {/* Feature Grid */}
         <div>
           <h2 className="text-2xl font-bold mb-6">Platform Features</h2>
@@ -280,6 +301,12 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Onboarding Wizard */}
+      <OnboardingWizard
+        open={showOnboarding}
+        onOpenChange={setShowOnboarding}
+      />
     </div>
   );
 }

@@ -101,6 +101,11 @@ export default function Signup() {
       // Successfully signed up and logged in
       console.log('✅ Signup successful:', user?.email);
 
+      // Reset onboarding flags for new user
+      localStorage.setItem('perdia_onboarding_completed', 'false');
+      localStorage.setItem('perdia_onboarding_current_step', '0');
+      localStorage.setItem('perdia_onboarding_skipped', 'false');
+
       // Redirect to dashboard after brief success message
       setTimeout(() => {
         navigate('/', { replace: true });
