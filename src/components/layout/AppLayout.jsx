@@ -82,18 +82,12 @@ function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center">
           <img
             src="/logo.png"
             alt="Perdia Education Logo"
-            className="h-10 w-auto"
+            className="h-16 w-auto"
           />
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-primary">Perdia Education</h1>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              SEO AUTOMATION • EMMA™
-            </p>
-          </div>
         </div>
       </SidebarHeader>
 
@@ -173,11 +167,8 @@ export default function AppLayout({ children }) {
             <img
               src="/logo.png"
               alt="Perdia Education Logo"
-              className="h-8 w-auto"
+              className="h-12 w-auto"
             />
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-primary">Perdia Education</h1>
-            </div>
           </header>
 
           {/* Main content */}
