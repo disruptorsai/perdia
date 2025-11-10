@@ -1,10 +1,9 @@
 /**
  * PERDIA EDUCATION - IMAGE GENERATION EDGE FUNCTION
  * ==================================================
- * Generates article hero images using AI
+ * Generates article hero images using Google Gemini 2.5 Flash Image
  *
- * Primary: Google Gemini 2.5 Flash Image ("Nano Banana")
- * Backup: OpenAI GPT-4o Image Generation
+ * Provider: Google Gemini 2.5 Flash Image ("Nano Banana")
  *
  * All generated images are optimized for article hero/featured images
  */
@@ -59,7 +58,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { prompt, provider = 'gemini', aspectRatio = '16:9' } = await req.json();
+    const { prompt, aspectRatio = '16:9' } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return new Response(
@@ -68,32 +67,15 @@ serve(async (req) => {
       );
     }
 
-    console.log('[generate-image] Request:', { provider, prompt: prompt.substring(0, 100) + '...' });
+    console.log('[generate-image] Request:', { prompt: prompt.substring(0, 100) + '...' });
 
     // Enhance prompt with system prompt guidance
     const enhancedPrompt = `${ARTICLE_IMAGE_SYSTEM_PROMPT}\n\nUser Request: ${prompt}`;
 
-    let imageUrl: string;
-    let usedProvider: string;
-
-    // Try primary provider (Gemini)
-    if (provider === 'gemini' || provider === 'google') {
-      try {
-        console.log('[generate-image] Attempting Gemini 2.5 Flash Image...');
-        imageUrl = await generateWithGemini(enhancedPrompt, aspectRatio);
-        usedProvider = 'gemini-2.5-flash-image';
-      } catch (geminiError) {
-        console.error('[generate-image] Gemini failed, falling back to GPT-4o:', geminiError);
-        // Fallback to GPT-4o
-        imageUrl = await generateWithGPT4o(enhancedPrompt);
-        usedProvider = 'gpt-4o-image';
-      }
-    } else {
-      // Use GPT-4o directly
-      console.log('[generate-image] Using GPT-4o directly...');
-      imageUrl = await generateWithGPT4o(enhancedPrompt);
-      usedProvider = 'gpt-4o-image';
-    }
+    // Generate with Gemini
+    console.log('[generate-image] Generating with Gemini 2.5 Flash Image...');
+    const imageUrl = await generateWithGemini(enhancedPrompt, aspectRatio);
+    const usedProvider = 'gemini-2.5-flash-image';
 
     console.log('[generate-image] Success:', { provider: usedProvider, imageUrl: imageUrl.substring(0, 50) + '...' });
 
@@ -196,44 +178,4 @@ async function generateWithGemini(prompt: string, aspectRatio: string): Promise<
   }
 
   throw new Error('No image data in Gemini response');
-}
-
-/**
- * Generate image using OpenAI GPT-4o Image Generation
- */
-async function generateWithGPT4o(prompt: string): Promise<string> {
-  const apiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY not configured');
-  }
-
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-image-1', // GPT-4o image generation model
-      prompt: prompt,
-      n: 1,
-      size: '1792x1024', // Closest to 16:9 for hero images
-      quality: 'hd',
-      style: 'natural', // Natural, professional style
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error('[GPT-4o] API Error:', errorData);
-    throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
-  }
-
-  const data = await response.json();
-
-  if (data.data && data.data[0]?.url) {
-    return data.data[0].url;
-  }
-
-  throw new Error('No image URL in OpenAI response');
 }

@@ -19,7 +19,6 @@ import { Card, CardHeader, CardTitle, CardContent, Badge, Spinner } from '@/comp
 import { PerformanceMetric, Keyword, ContentQueue } from '@/lib/perdia-sdk';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
-import DiscoveryChecklist from '@/components/onboarding/DiscoveryChecklist';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -247,9 +246,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Discovery Checklist */}
-        {onboardingCompleted && <DiscoveryChecklist />}
 
         {/* Feature Grid */}
         <div>

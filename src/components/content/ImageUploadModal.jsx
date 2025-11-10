@@ -199,21 +199,80 @@ Return ONLY the image prompt, nothing else.`,
     }
   };
 
-  // Search stock images
+  // Search stock images using AI to generate search query
   const handleSearchStockImages = async () => {
     setSearching(true);
     try {
-      // For now, just show a message that stock images are not available
-      // Unsplash's source.unsplash.com doesn't support CORS from browsers
-      // Would need to implement a proper Unsplash integration with API key via Edge Function
-      toast.info('Stock image search temporarily unavailable. Please use Upload or Generate instead.');
+      // Step 1: Use AI to generate optimal search query from article data
+      toast.info('Analyzing article to find perfect images...');
 
-      // Alternative: Just redirect users to use AI generation
-      setActiveTab('generate');
-      toast.info('Try AI Image Generation instead - it creates custom images for your article!');
+      const searchQuery = await invokeLLM({
+        prompt: `Based on this article, generate a concise 2-4 word search query for finding the perfect stock photo on Unsplash.
+
+Article Title: ${articleData.title}
+${articleData.content ? `First 300 chars: ${articleData.content.substring(0, 300)}...` : ''}
+
+Return ONLY the search query (2-4 words), nothing else. Make it specific enough to find relevant images but broad enough to get good results.
+
+Examples:
+- "online learning student"
+- "business education"
+- "graduate celebration"
+- "digital classroom"`,
+        provider: 'claude',
+        model: 'claude-haiku-4-5-20251001',
+        temperature: 0.5,
+        maxTokens: 50
+      });
+
+      const query = searchQuery.trim().replace(/['"]/g, '');
+      console.log('[ImageUploadModal] Unsplash search query:', query);
+
+      // Step 2: Search Unsplash via Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const functionUrl = `${supabaseUrl}/functions/v1/search-stock-images`;
+
+      const { supabase } = await import('@/lib/supabase-client');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query,
+          perPage: 6
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Stock search failed');
+      }
+
+      const data = await response.json();
+      console.log('[ImageUploadModal] Found stock images:', data.images.length);
+
+      setStockImages(data.images);
+
+      if (data.images.length === 0) {
+        toast.info('No images found. Try AI Image Generation instead!');
+        setActiveTab('generate');
+      } else {
+        toast.success(`Found ${data.images.length} images for "${query}"`);
+      }
     } catch (error) {
       console.error('Stock search error:', error);
-      toast.error('Failed to find stock images');
+      toast.error(error.message || 'Failed to find stock images');
+      // Fallback to AI generation
+      setActiveTab('generate');
+      toast.info('Try AI Image Generation instead!');
     } finally {
       setSearching(false);
     }
@@ -223,10 +282,28 @@ Return ONLY the image prompt, nothing else.`,
   const handleUseStockImage = async (stockImage) => {
     setUploading(true);
     try {
-      // Download the stock image
-      const response = await fetch(stockImage.url);
+      // Notify Unsplash of download (required by API terms)
+      if (stockImage.downloadLocation) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const { supabase } = await import('@/lib/supabase-client');
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // Track download with Unsplash
+        await fetch(`${supabaseUrl}/functions/v1/track-unsplash-download`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ downloadLocation: stockImage.downloadLocation }),
+        }).catch(err => console.warn('Failed to track download:', err));
+      }
+
+      // Download the stock image (use downloadUrl for best quality)
+      const response = await fetch(stockImage.downloadUrl || stockImage.url);
       const blob = await response.blob();
-      const file = new File([blob], 'stock-image.jpg', { type: 'image/jpeg' });
+      const filename = `unsplash-${stockImage.id}.jpg`;
+      const file = new File([blob], filename, { type: 'image/jpeg' });
 
       // Upload to our storage
       const result = await UploadFile({
@@ -238,11 +315,13 @@ Return ONLY the image prompt, nothing else.`,
       onImageAdded({
         url: result.url,
         path: result.path,
-        source: 'stock_image',
-        altText: stockImage.altText
+        source: 'unsplash',
+        altText: stockImage.altText,
+        attribution: `Photo by ${stockImage.photographer} on Unsplash`,
+        photographerUrl: stockImage.photographerUrl
       });
 
-      toast.success('Stock image added successfully!');
+      toast.success(`Stock image by ${stockImage.photographer} added successfully!`);
       onClose();
     } catch (error) {
       console.error('Stock image download error:', error);
@@ -398,7 +477,7 @@ Return ONLY the image prompt, nothing else.`,
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-800">
-                <strong>Powered by:</strong> Google Gemini 2.5 Flash Image ("Nano Banana") with GPT-4o fallback. Generates professional article hero images optimized for your content.
+                <strong>Powered by:</strong> Google Gemini 2.5 Flash Image ("Nano Banana"). Generates professional article hero images optimized for your content.
               </p>
             </div>
           </TabsContent>
@@ -432,18 +511,22 @@ Return ONLY the image prompt, nothing else.`,
             {stockImages.length > 0 && (
               <div className="space-y-2">
                 <Label>Found Images</Label>
-                <div className="grid gap-4">
+                <div className="grid gap-4 max-h-[500px] overflow-y-auto">
                   {stockImages.map((image) => (
                     <div key={image.id} className="relative group">
                       <img
-                        src={image.url}
+                        src={image.thumbnailUrl || image.url}
                         alt={image.altText}
-                        className="w-full h-64 object-cover rounded-lg border"
+                        className="w-full h-48 object-cover rounded-lg border"
                       />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col items-center justify-center gap-2 p-4">
+                        <p className="text-white text-sm text-center">
+                          Photo by <strong>{image.photographer}</strong>
+                        </p>
                         <Button
                           onClick={() => handleUseStockImage(image)}
                           disabled={uploading}
+                          className="bg-white text-black hover:bg-gray-100"
                         >
                           {uploading ? (
                             <>
@@ -461,6 +544,9 @@ Return ONLY the image prompt, nothing else.`,
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Images provided by <a href="https://unsplash.com" target="_blank" rel="noopener" className="underline">Unsplash</a>
+                </p>
               </div>
             )}
           </TabsContent>
