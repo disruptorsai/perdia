@@ -27,7 +27,7 @@ export default function TrainingInterface({ agent }) {
                 hourly_rate: 0,
                 currency: "USD",
                 color: "#2563eb",
-                status: "active"
+                is_active: true  // Fixed: use is_active boolean instead of status
               });
               clientData = [defaultClient];
             }
