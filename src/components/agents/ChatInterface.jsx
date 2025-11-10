@@ -4,14 +4,15 @@ import { agentSDK } from '@/lib/agent-sdk';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Loader2, AlertCircle, RefreshCw, Shield } from 'lucide-react';
+import { Send, Loader2, AlertCircle, RefreshCw, Shield, Plus } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import AgentThinkingIndicator from './AgentThinkingIndicator';
-import { Client, ContentQueue, SocialPost, FileDocument } from '@/lib/perdia-sdk';
+import { Client, ContentQueue, SocialPost, FileDocument, Keyword } from '@/lib/perdia-sdk';
 import { getCurrentUser } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 
 const CONFIRMATION_SEPARATOR = '---|||---Ready to send to approval?';
+const KEYWORD_DATA_SEPARATOR = '---|||---KEYWORD_DATA:';
 
 export default function ChatInterface({ agent, conversationId, onConversationCreated }) {
     const [conversation, setConversation] = useState(null);
@@ -23,6 +24,8 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
     const [knowledgeFiles, setKnowledgeFiles] = useState([]);
     const [pendingContent, setPendingContent] = useState(null);
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
+    const [pendingKeywords, setPendingKeywords] = useState(null);
+    const [showKeywordConfirmation, setShowKeywordConfirmation] = useState(false);
     const [error, setError] = useState(null);
     const [detailedError, setDetailedError] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
@@ -292,7 +295,124 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
         }
     };
 
-    
+    // Parse keyword data from AI response (JSON or structured text)
+    const parseKeywordData = (content) => {
+        try {
+            // Try to parse as JSON first
+            const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[1]);
+                return Array.isArray(parsed) ? parsed : (parsed.keywords || []);
+            }
+
+            // Try to parse as structured text
+            const keywords = [];
+            const lines = content.split('\n');
+
+            for (const line of lines) {
+                // Look for patterns like: "keyword name | volume: 1000 | difficulty: 45 | type: new_target"
+                const match = line.match(/^[\d\.\-\*\s]*(.+?)\s*\|\s*volume:\s*(\d+)\s*\|\s*difficulty:\s*(\d+)\s*\|\s*type:\s*(\w+)/i);
+                if (match) {
+                    keywords.push({
+                        keyword: match[1].trim(),
+                        search_volume: parseInt(match[2]),
+                        difficulty: parseInt(match[3]),
+                        list_type: match[4].trim().toLowerCase()
+                    });
+                }
+            }
+
+            return keywords.length > 0 ? keywords : null;
+        } catch (error) {
+            console.error('Error parsing keyword data:', error);
+            return null;
+        }
+    };
+
+    const handleAddKeywords = async (keywordData) => {
+        try {
+            if (!Array.isArray(keywordData) || keywordData.length === 0) {
+                toast.error('No valid keyword data found');
+                return;
+            }
+
+            let successCount = 0;
+            let duplicateCount = 0;
+            let errorCount = 0;
+
+            for (const kw of keywordData) {
+                try {
+                    // Check if keyword already exists
+                    const existing = await Keyword.find({ keyword: kw.keyword });
+                    if (existing && existing.length > 0) {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    // Create new keyword with required fields
+                    await Keyword.create({
+                        keyword: kw.keyword,
+                        search_volume: kw.search_volume || 0,
+                        difficulty: kw.difficulty || 0,
+                        list_type: kw.list_type || 'new_target',
+                        status: 'not_started',
+                        priority: kw.priority || 3,
+                        category: kw.category || 'uncategorized'
+                    });
+                    successCount++;
+                } catch (error) {
+                    console.error(`Error creating keyword "${kw.keyword}":`, error);
+                    errorCount++;
+                }
+            }
+
+            // Show summary toast
+            if (successCount > 0) {
+                toast.success(`Added ${successCount} keyword${successCount > 1 ? 's' : ''} to Keyword Manager`, {
+                    description: duplicateCount > 0
+                        ? `Skipped ${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''}`
+                        : 'Keywords are now available in the Keyword Manager',
+                    duration: 5000
+                });
+            }
+
+            if (errorCount > 0) {
+                toast.warning(`Failed to add ${errorCount} keyword${errorCount > 1 ? 's' : ''}`, {
+                    description: 'Some keywords could not be imported',
+                    duration: 4000
+                });
+            }
+
+            if (successCount === 0 && duplicateCount === 0 && errorCount === 0) {
+                toast.error('No keywords were added', {
+                    description: 'Please check the keyword data format',
+                    duration: 4000
+                });
+            }
+
+            setPendingKeywords(null);
+            setShowKeywordConfirmation(false);
+
+        } catch (error) {
+            console.error('Error adding keywords:', error);
+            toast.error('Failed to add keywords', {
+                description: error.message || 'An error occurred while importing keywords',
+                duration: 6000
+            });
+        }
+    };
+
+    const handleKeywordConfirmation = async (shouldAdd) => {
+        setShowKeywordConfirmation(false);
+        if (shouldAdd && pendingKeywords) {
+            await handleAddKeywords(pendingKeywords);
+        } else {
+            setPendingKeywords(null);
+            toast.info('You can revise the keyword list below', { duration: 3000 });
+        }
+    };
+
+
     useEffect(() => {
         if (viewportRef.current) {
             viewportRef.current.scrollTo({
@@ -308,19 +428,39 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
         }
 
         const isSavableAgent = contentAgents.includes(agent?.name) || socialAgents.includes(agent?.name);
+        const isKeywordAgent = structuredDataAgents.includes(agent?.name);
 
+        // Handle content confirmation for content-producing agents
         if (isSavableAgent && lastMessage?.role === 'assistant' && lastMessage.content?.includes(CONFIRMATION_SEPARATOR)) {
             const parts = lastMessage.content.split(CONFIRMATION_SEPARATOR);
             const content = parts[0];
             setPendingContent(content);
             setShowSaveConfirmation(true);
-        } else {
+            setShowKeywordConfirmation(false);
+        }
+        // Handle keyword data for keyword researcher agent
+        else if (isKeywordAgent && lastMessage?.role === 'assistant') {
+            // Try to parse keyword data from the response
+            const parsedKeywords = parseKeywordData(lastMessage.content);
+            if (parsedKeywords && parsedKeywords.length > 0) {
+                setPendingKeywords(parsedKeywords);
+                setShowKeywordConfirmation(true);
+                setShowSaveConfirmation(false);
+            } else {
+                setShowKeywordConfirmation(false);
+                setPendingKeywords(null);
+            }
+        }
+        // Reset confirmations
+        else {
             if(lastMessage?.role === 'user' || (lastMessage?.role === 'assistant' && !lastMessage?.content?.includes(CONFIRMATION_SEPARATOR))) {
                 setShowSaveConfirmation(false);
                 setPendingContent(null);
+                setShowKeywordConfirmation(false);
+                setPendingKeywords(null);
             }
         }
-    }, [messages, agent, isAgentThinking, contentAgents, socialAgents]);
+    }, [messages, agent, isAgentThinking, contentAgents, socialAgents, structuredDataAgents]);
 
     const createConversationFromFirstMessage = async (firstMessage) => {
         try {
@@ -709,6 +849,25 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                                 {contentAgents.includes(agent?.name) ? 'Yes, Send for Review' : 'Yes, Save'}
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => handleConfirmation(false)}>No, I have changes</Button>
+                        </div>
+                    </div>
+                )}
+                 {showKeywordConfirmation && pendingKeywords && (
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-purple-800 text-center sm:text-left">
+                                Found {pendingKeywords.length} keyword{pendingKeywords.length > 1 ? 's' : ''} - Add to Keyword Manager?
+                            </p>
+                            <p className="text-xs text-purple-600 mt-1 text-center sm:text-left">
+                                Keywords will be added with duplicate checking
+                            </p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => handleKeywordConfirmation(true)}>
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add Keywords
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleKeywordConfirmation(false)}>Not Now</Button>
                         </div>
                     </div>
                 )}

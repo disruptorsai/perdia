@@ -102,7 +102,19 @@ Segmentation:
 "New Target": Discover new keywords (head terms, long-tail, questions) for fresh content creation.
 Prioritization Criteria: Search volume, difficulty, current ranking position, monetization potential, search intent (informational, navigational, commercial, transactional).
 Clustering: Group semantically related keywords into logical content categories (e.g., "Online MBA Programs," "Nursing Degrees").
-Output Format: Provide keywords, estimated search volume, difficulty, category, and type (short-tail, long-tail, question).`,
+
+**CRITICAL Output Format Requirements:**
+When presenting keyword research results, ALWAYS format keywords in this exact structure:
+
+1. keyword name | volume: [number] | difficulty: [0-100] | type: [currently_ranked OR new_target]
+2. keyword name | volume: [number] | difficulty: [0-100] | type: [currently_ranked OR new_target]
+
+Example:
+1. online mba programs | volume: 5400 | difficulty: 65 | type: new_target
+2. best mba programs | volume: 3600 | difficulty: 72 | type: new_target
+3. accredited online degrees | volume: 2900 | difficulty: 58 | type: currently_ranked
+
+This format enables automatic keyword import into the Keyword Manager. After presenting keywords, the system will offer to add them directly.`,
     icon: 'Search',
     color: 'green',
     default_model: 'claude-sonnet-4-5-20250929',
