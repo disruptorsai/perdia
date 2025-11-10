@@ -220,7 +220,7 @@ async function generateWithGPT4o(prompt: string): Promise<string> {
       model: 'gpt-image-1', // OpenAI's NEW image generation model (NOT DALL-E 3!)
       prompt: prompt,
       n: 1,
-      size: '1792x1024', // Closest to 16:9 for hero images
+      size: '1536x1024', // Supported size for hero images (16:9 aspect ratio)
       quality: 'high', // Fixed: OpenAI expects 'high' not 'hd'
       // NOTE: gpt-image-1 does NOT support 'style' parameter (removed)
     }),

@@ -106,7 +106,7 @@ export class DataForSEOClient {
   async getKeywordData(keyword, location = '2840', language = 'en') {
     try {
       const payload = JSON.stringify([{
-        keyword: keyword,
+        keywords: [keyword], // DataForSEO expects 'keywords' array, not 'keyword' string
         location_code: parseInt(location),
         language_code: language,
         search_partners: false,
