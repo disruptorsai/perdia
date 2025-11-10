@@ -4,7 +4,9 @@
  * Generates article hero images using AI
  *
  * Primary: Google Gemini 2.5 Flash Image ("Nano Banana")
- * Backup: OpenAI GPT-4o Image Generation
+ * Backup: OpenAI gpt-image-1 (NEW IMAGE MODEL)
+ *
+ * ⚠️ HARD RULE: NEVER USE DALL-E 3! Only gpt-image-1 and Gemini 2.5 Flash!
  *
  * All generated images are optimized for article hero/featured images
  */
@@ -83,16 +85,16 @@ serve(async (req) => {
         imageUrl = await generateWithGemini(enhancedPrompt, aspectRatio);
         usedProvider = 'gemini-2.5-flash-image';
       } catch (geminiError) {
-        console.error('[generate-image] Gemini failed, falling back to GPT-4o:', geminiError);
-        // Fallback to GPT-4o
+        console.error('[generate-image] Gemini failed, falling back to gpt-image-1:', geminiError);
+        // Fallback to gpt-image-1 (NOT DALL-E 3!)
         imageUrl = await generateWithGPT4o(enhancedPrompt);
-        usedProvider = 'gpt-4o-image';
+        usedProvider = 'gpt-image-1';
       }
     } else {
-      // Use GPT-4o directly
-      console.log('[generate-image] Using GPT-4o directly...');
+      // Use gpt-image-1 directly (NOT DALL-E 3!)
+      console.log('[generate-image] Using gpt-image-1 directly...');
       imageUrl = await generateWithGPT4o(enhancedPrompt);
-      usedProvider = 'gpt-4o-image';
+      usedProvider = 'gpt-image-1';
     }
 
     console.log('[generate-image] Success:', { provider: usedProvider, imageUrl: imageUrl.substring(0, 50) + '...' });
@@ -199,7 +201,8 @@ async function generateWithGemini(prompt: string, aspectRatio: string): Promise<
 }
 
 /**
- * Generate image using OpenAI GPT-4o Image Generation
+ * Generate image using OpenAI gpt-image-1
+ * ⚠️ HARD RULE: NEVER USE DALL-E 3! Only gpt-image-1!
  */
 async function generateWithGPT4o(prompt: string): Promise<string> {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
@@ -214,18 +217,18 @@ async function generateWithGPT4o(prompt: string): Promise<string> {
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-image-1', // GPT-4o image generation model
+      model: 'gpt-image-1', // OpenAI's NEW image generation model (NOT DALL-E 3!)
       prompt: prompt,
       n: 1,
       size: '1792x1024', // Closest to 16:9 for hero images
       quality: 'hd',
-      style: 'natural', // Natural, professional style
+      // NOTE: gpt-image-1 does NOT support 'style' parameter (removed)
     }),
   });
 
   if (!response.ok) {
     const errorData = await response.text();
-    console.error('[GPT-4o] API Error:', errorData);
+    console.error('[gpt-image-1] API Error:', errorData);
     throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
   }
 

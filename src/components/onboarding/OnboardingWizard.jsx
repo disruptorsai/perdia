@@ -119,37 +119,37 @@ export default function OnboardingWizard({ open, onOpenChange }) {
             {currentStep === WIZARD_STEPS.WELCOME && (
               <button
                 onClick={handleSkip}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-20"
+                className="absolute top-2 right-2 p-1.5 hover:bg-gray-100 rounded-full transition-colors z-20"
                 aria-label="Close onboarding"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-4 h-4 text-gray-500" />
               </button>
             )}
 
             {/* Progress bar */}
-            <div className="px-8 pt-6 pb-4">
-              <div className="flex items-center justify-between mb-2">
+            <div className="px-4 pt-3 pb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">
+                  <h3 className="text-xs font-medium text-gray-900">
                     {currentStepConfig.title}
                   </h3>
                   <p className="text-xs text-gray-500">
                     Step {currentStep + 1} of {TOTAL_WIZARD_STEPS}
                   </p>
                 </div>
-                <span className="text-sm font-semibold text-blue-600">
+                <span className="text-xs font-semibold text-blue-600">
                   {Math.round(progressPercentage)}%
                 </span>
               </div>
               <Progress
                 value={progressPercentage}
-                className="h-2"
+                className="h-1.5"
                 indicatorClassName="bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500 ease-out"
               />
             </div>
 
             {/* Step indicators */}
-            <div className="flex items-center justify-between px-8 pb-4">
+            <div className="flex items-center justify-between px-4 pb-2">
               {WIZARD_STEP_CONFIG.map((step, index) => (
                 <div
                   key={step.id}
@@ -157,13 +157,13 @@ export default function OnboardingWizard({ open, onOpenChange }) {
                 >
                   <div
                     className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium
+                      w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
                       transition-all duration-300
                       ${
                         index < currentStep
                           ? 'bg-green-500 text-white'
                           : index === currentStep
-                          ? 'bg-blue-600 text-white ring-4 ring-blue-100'
+                          ? 'bg-blue-600 text-white ring-2 ring-blue-100'
                           : 'bg-gray-200 text-gray-500'
                       }
                     `}
@@ -172,7 +172,7 @@ export default function OnboardingWizard({ open, onOpenChange }) {
                   </div>
                   <span
                     className={`
-                      text-xs mt-1 text-center hidden sm:block
+                      text-xs mt-0.5 text-center hidden sm:block
                       ${
                         index <= currentStep
                           ? 'text-gray-900 font-medium'
@@ -211,7 +211,7 @@ export default function OnboardingWizard({ open, onOpenChange }) {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="p-8"
+                className="p-4"
               >
                 {renderStep()}
               </motion.div>
@@ -220,19 +220,40 @@ export default function OnboardingWizard({ open, onOpenChange }) {
 
           {/* Footer Navigation (only show if not on complete step) */}
           {currentStep !== WIZARD_STEPS.COMPLETE && (
-            <div className="sticky bottom-0 bg-white border-t px-8 py-4">
+            <div className="sticky bottom-0 bg-white border-t px-4 py-2">
               <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  onClick={handlePrevious}
-                  disabled={currentStep === WIZARD_STEPS.WELCOME}
-                >
-                  Previous
-                </Button>
+                {currentStep === WIZARD_STEPS.WELCOME ? (
+                  // Welcome step - show nothing on left, buttons on right
+                  <div></div>
+                ) : (
+                  // Other steps - show Previous button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePrevious}
+                  >
+                    Previous
+                  </Button>
+                )}
 
                 <div className="flex items-center gap-2">
-                  {currentStep !== WIZARD_STEPS.WELCOME && (
-                    <Button variant="outline" onClick={handleSkip}>
+                  {currentStep === WIZARD_STEPS.WELCOME ? (
+                    // Welcome step - show Get Started and Skip
+                    <>
+                      <Button variant="outline" size="sm" onClick={handleSkip}>
+                        Skip Tutorial
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleNext}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                      >
+                        Get Started
+                      </Button>
+                    </>
+                  ) : (
+                    // Other steps - show Skip button
+                    <Button variant="outline" size="sm" onClick={handleSkip}>
                       Skip Tutorial
                     </Button>
                   )}

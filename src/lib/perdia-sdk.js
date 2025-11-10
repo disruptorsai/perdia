@@ -771,7 +771,10 @@ export const CreateFileSignedUrl = async (options) => {
  * GenerateImage Integration
  * Replaces Base44.integrations.Core.GenerateImage
  *
- * Generates images using AI (OpenAI DALL-E or other providers)
+ * ⚠️ HARD RULE: Generates images using AI
+ * - PRIMARY: Google Gemini 2.5 Flash Image
+ * - FALLBACK: OpenAI gpt-image-1
+ * - NEVER USE DALL-E 3!
  */
 export const GenerateImage = async (options) => {
   try {

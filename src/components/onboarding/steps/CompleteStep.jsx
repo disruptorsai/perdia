@@ -106,25 +106,25 @@ export default function CompleteStep({ onComplete, onboardingData }) {
 
       {/* Header */}
       <motion.div
-        className="text-center mb-12"
+        className="text-center mb-6"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, type: 'spring', damping: 15 }}
       >
         {/* Success Icon */}
         <motion.div
-          className="inline-block mb-6"
+          className="inline-block mb-4"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
         >
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl">
-            <CheckCircle2 className="w-12 h-12 text-white" />
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl">
+            <CheckCircle2 className="w-8 h-8 text-white" />
           </div>
         </motion.div>
 
         <motion.h1
-          className="text-4xl font-bold text-gray-900 mb-4"
+          className="text-2xl font-bold text-gray-900 mb-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -133,7 +133,7 @@ export default function CompleteStep({ onComplete, onboardingData }) {
         </motion.h1>
 
         <motion.p
-          className="text-xl text-gray-600 mb-4"
+          className="text-sm text-gray-600 mb-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
@@ -142,7 +142,7 @@ export default function CompleteStep({ onComplete, onboardingData }) {
         </motion.p>
 
         <motion.p
-          className="text-gray-500"
+          className="text-xs text-gray-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
@@ -153,29 +153,29 @@ export default function CompleteStep({ onComplete, onboardingData }) {
 
       {/* Accomplishments */}
       <motion.div
-        className="mb-12"
+        className="mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <Card className="p-4">
+          <h2 className="text-base font-semibold text-gray-900 mb-3">
             What You Accomplished
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {accomplishments.map((item, index) => {
               const Icon = item.icon;
               return (
                 <motion.div
                   key={item.title}
-                  className="flex items-start gap-4"
+                  className="flex items-start gap-3"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.8 + index * 0.1 }}
                 >
                   <div
                     className={`
-                    flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center
+                    flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
                     ${
                       item.completed
                         ? 'bg-green-100'
@@ -184,21 +184,21 @@ export default function CompleteStep({ onComplete, onboardingData }) {
                   `}
                   >
                     <Icon
-                      className={`w-5 h-5 ${
+                      className={`w-4 h-4 ${
                         item.completed ? 'text-green-600' : 'text-gray-400'
                       }`}
                     />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-gray-900">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="font-medium text-sm text-gray-900">
                         {item.title}
                       </h3>
                       {item.completed && (
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <CheckCircle2 className="w-3 h-3 text-green-600" />
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">{item.description}</p>
+                    <p className="text-xs text-gray-600">{item.description}</p>
                   </div>
                 </motion.div>
               );
@@ -209,17 +209,17 @@ export default function CompleteStep({ onComplete, onboardingData }) {
 
       {/* What's Next */}
       <motion.div
-        className="mb-12"
+        className="mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.2 }}
       >
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-blue-600" />
+        <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-blue-600" />
           {COMPLETE_CONTENT.next_steps.title}
         </h2>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {COMPLETE_CONTENT.next_steps.items.map((step, index) => {
             const Icon = step.icon;
             return (
@@ -230,23 +230,23 @@ export default function CompleteStep({ onComplete, onboardingData }) {
                 transition={{ delay: 1.3 + index * 0.1 }}
               >
                 <Card
-                  className="p-6 hover:shadow-lg transition-all cursor-pointer group"
+                  className="p-3 hover:shadow-lg transition-all cursor-pointer group"
                   onClick={() => handleNavigateToPage(step.route)}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                      <Icon className="w-6 h-6 text-blue-600" />
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <Icon className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1">
+                      <h3 className="font-semibold text-sm text-gray-900 mb-0.5">
                         {step.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-xs text-gray-600 mb-2">
                         {step.description}
                       </p>
-                      <div className="flex items-center text-sm text-blue-600 font-medium group-hover:text-blue-700">
+                      <div className="flex items-center text-xs text-blue-600 font-medium group-hover:text-blue-700">
                         <span>{step.action}</span>
-                        <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
                   </div>
@@ -259,21 +259,21 @@ export default function CompleteStep({ onComplete, onboardingData }) {
 
       {/* Discovery Prompt */}
       <motion.div
-        className="mb-8"
+        className="mb-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.7 }}
       >
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
-          <div className="flex items-start gap-4">
+        <Card className="p-3 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+          <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <Badge className="bg-purple-600">New</Badge>
+              <Badge className="bg-purple-600 text-xs">New</Badge>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-2">
+              <h3 className="font-semibold text-sm text-gray-900 mb-1">
                 {COMPLETE_CONTENT.discovery_prompt.title}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-gray-600">
                 {COMPLETE_CONTENT.discovery_prompt.description}
               </p>
             </div>
@@ -283,15 +283,15 @@ export default function CompleteStep({ onComplete, onboardingData }) {
 
       {/* Action Buttons */}
       <motion.div
-        className="flex justify-center gap-4"
+        className="flex justify-center gap-3"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.9 }}
       >
         <Button
-          size="lg"
+          size="sm"
           onClick={handleGoToDashboard}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8"
+          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6"
         >
           {COMPLETE_CONTENT.cta}
         </Button>

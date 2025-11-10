@@ -30,6 +30,26 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
     const viewportRef = useRef(null);
     const isSendingRef = useRef(false);
 
+    // Agents that produce content for approval queue
+    const contentAgents = useRef([
+        'seo_content_writer',
+        'content_optimizer',
+        'emma_promoter',
+        'enrollment_strategist',
+        'history_storyteller',
+        'resource_expander',
+        'social_engagement_booster'
+    ]).current;
+
+    // Agents that produce structured data with custom action buttons
+    // TODO: Implement custom "Add Keywords" button for keyword_researcher
+    // This agent produces structured keyword data that should be directly imported
+    // into the keyword manager rather than going through the approval queue
+    const structuredDataAgents = useRef([
+        'keyword_researcher'
+    ]).current;
+
+    // Legacy social agents (keeping for backwards compatibility)
     const socialAgents = useRef([
         'instagram_content_creator',
         'facebook_content_creator',
@@ -128,46 +148,62 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
         loadConversation();
     }, [conversationId]);
 
-    const saveSocialPost = async (contentToSave, originalPrompt) => {
-        try {
-            const channel = agent.name.replace('_content_creator', '');
-            
-            await SocialPost.create({
-                channel: channel,
-                content: contentToSave,
-                original_prompt: originalPrompt || 'Generated content',
-                status: 'Suggested',
-                ai_generated: true
-            });
+    // Map agent names to content types and display labels
+    const getContentTypeInfo = (agentName) => {
+        const typeMap = {
+            'seo_content_writer': {
+                type: 'new_article',
+                label: 'SEO Article',
+                defaultTitle: 'AI Generated SEO Article'
+            },
+            'content_optimizer': {
+                type: 'page_optimization',
+                label: 'Content Optimization',
+                defaultTitle: 'Optimized Content'
+            },
+            'emma_promoter': {
+                type: 'promotional',
+                label: 'EMMA Promotional Content',
+                defaultTitle: 'EMMA Promotional Content'
+            },
+            'enrollment_strategist': {
+                type: 'strategy_guide',
+                label: 'Enrollment Strategy Guide',
+                defaultTitle: 'Enrollment Strategy Document'
+            },
+            'history_storyteller': {
+                type: 'company_story',
+                label: 'Company Story',
+                defaultTitle: 'Company Narrative'
+            },
+            'resource_expander': {
+                type: 'lead_magnet',
+                label: 'Lead Magnet / Resource',
+                defaultTitle: 'Educational Resource'
+            },
+            'social_engagement_booster': {
+                type: 'social_content',
+                label: 'Social Media Content',
+                defaultTitle: 'Social Media Post'
+            }
+        };
 
-            toast.success("Social post saved to Library", {
-                description: `A new ${agent.display_name} post is now available in the Social Post Library.`,
-                duration: 4000
-            });
-
-        } catch (error) {
-            console.error("Error saving social post to library:", error);
-            toast.error("Failed to save to Social Post Library", {
-                description: "The post couldn't be saved. You can try again.",
-                duration: 6000
-            });
-        }
+        return typeMap[agentName] || {
+            type: 'new_article',
+            label: 'Content',
+            defaultTitle: 'AI Generated Content'
+        };
     };
-    
-    const saveContentToLibrary = async (contentToSave, originalPrompt) => {
-        if (agent?.name === 'blog_content_writer') {
-            await saveBlogPost(contentToSave);
-        } else if (socialAgents.includes(agent?.name)) {
-            await saveSocialPost(contentToSave, originalPrompt);
-        }
-    };
 
-    const saveBlogPost = async (contentToSave) => {
+    const saveContentToApprovalQueue = async (contentToSave, originalPrompt) => {
         try {
             const contentStartIndex = contentToSave.search(/<h[1-2][^>]*>|#\s/);
             const cleanContent = contentStartIndex !== -1 ? contentToSave.substring(contentStartIndex) : contentToSave;
 
-            let title = 'AI Generated Blog Post';
+            const contentTypeInfo = getContentTypeInfo(agent?.name);
+
+            // Extract title from content
+            let title = contentTypeInfo.defaultTitle;
             const titleMatch = cleanContent.match(/<h[1-2][^>]*>(.*?)<\/h[1-2]>|^#\s+(.+)/m);
             if (titleMatch) {
                 title = (titleMatch[1] || titleMatch[2] || '').replace(/<[^>]*>/g, '').trim();
@@ -195,26 +231,64 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             await ContentQueue.create({
                 title: title,
                 content: cleanContent,
-                content_type: 'new_article',
+                content_type: contentTypeInfo.type,
                 status: 'pending_review',
                 target_keywords: clientData?.focus_keywords ? [clientData.focus_keywords] : [],
                 word_count: wordCount,
                 meta_description: metaDescription,
-                agent_name: agent?.name || 'blog_content_writer',
+                agent_name: agent?.name || 'unknown',
                 automation_mode: 'manual'
             });
 
-            toast.success("Blog post sent to Approval Queue", {
+            toast.success(`${contentTypeInfo.label} sent to Approval Queue`, {
                 description: `"${title}" is now pending review in the Approval Queue.`,
                 duration: 4000
             });
 
         } catch (error) {
-            console.error("Error saving blog content to approval queue:", error);
+            console.error("Error saving content to approval queue:", error);
             toast.error("Failed to save to Approval Queue", {
-                description: "The blog post couldn't be saved. You can try again.",
+                description: "The content couldn't be saved. You can try again.",
                 duration: 6000
             });
+        }
+    };
+
+    // Legacy function for backwards compatibility
+    const saveSocialPost = async (contentToSave, originalPrompt) => {
+        try {
+            const channel = agent.name.replace('_content_creator', '');
+
+            await SocialPost.create({
+                channel: channel,
+                content: contentToSave,
+                original_prompt: originalPrompt || 'Generated content',
+                status: 'Suggested',
+                ai_generated: true
+            });
+
+            toast.success("Social post saved to Library", {
+                description: `A new ${agent.display_name} post is now available in the Social Post Library.`,
+                duration: 4000
+            });
+
+        } catch (error) {
+            console.error("Error saving social post to library:", error);
+            toast.error("Failed to save to Social Post Library", {
+                description: "The post couldn't be saved. You can try again.",
+                duration: 6000
+            });
+        }
+    };
+
+    const saveContentToLibrary = async (contentToSave, originalPrompt) => {
+        // All content-producing agents now go through approval queue
+        if (contentAgents.includes(agent?.name)) {
+            await saveContentToApprovalQueue(contentToSave, originalPrompt);
+        }
+        // Legacy social agents (if they exist)
+        else if (socialAgents.includes(agent?.name)) {
+            await saveSocialPost(contentToSave, originalPrompt);
         }
     };
 
@@ -233,8 +307,8 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             setIsAgentThinking(false);
         }
 
-        const isSavableAgent = agent?.name === 'blog_content_writer' || socialAgents.includes(agent?.name);
-        
+        const isSavableAgent = contentAgents.includes(agent?.name) || socialAgents.includes(agent?.name);
+
         if (isSavableAgent && lastMessage?.role === 'assistant' && lastMessage.content?.includes(CONFIRMATION_SEPARATOR)) {
             const parts = lastMessage.content.split(CONFIRMATION_SEPARATOR);
             const content = parts[0];
@@ -246,7 +320,7 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                 setPendingContent(null);
             }
         }
-    }, [messages, agent, isAgentThinking, socialAgents]);
+    }, [messages, agent, isAgentThinking, contentAgents, socialAgents]);
 
     const createConversationFromFirstMessage = async (firstMessage) => {
         try {
@@ -477,7 +551,7 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
             <div className="border-b border-slate-200 p-4 bg-white">
                 <h2 className="font-semibold text-slate-900 text-lg flex items-center gap-2">
                     {agentDisplayName}
-                    {agent?.name === 'blog_content_writer' && (
+                    {contentAgents.includes(agent?.name) && (
                         <span className="text-sm bg-orange-600 text-white px-2 py-1 rounded-full">
                             Approval Queue
                         </span>
@@ -485,6 +559,11 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                     {socialAgents.includes(agent?.name) && (
                         <span className="text-sm bg-blue-600 text-white px-2 py-1 rounded-full">
                             Library-Enabled
+                        </span>
+                    )}
+                    {structuredDataAgents.includes(agent?.name) && (
+                        <span className="text-sm bg-purple-600 text-white px-2 py-1 rounded-full">
+                            Custom Actions
                         </span>
                     )}
                     {showHumanizationReminder && (
@@ -623,11 +702,11 @@ export default function ChatInterface({ agent, conversationId, onConversationCre
                  {showSaveConfirmation && (
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <p className="text-sm font-semibold text-green-800 text-center sm:text-left">
-                            {agent?.name === 'blog_content_writer' ? 'Ready to send to Approval Queue?' : 'Ready to save to the library?'}
+                            {contentAgents.includes(agent?.name) ? 'Ready to send to Approval Queue?' : 'Ready to save to the library?'}
                         </p>
                         <div className="flex gap-2">
                             <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleConfirmation(true)}>
-                                {agent?.name === 'blog_content_writer' ? 'Yes, Send for Review' : 'Yes, Save'}
+                                {contentAgents.includes(agent?.name) ? 'Yes, Send for Review' : 'Yes, Save'}
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => handleConfirmation(false)}>No, I have changes</Button>
                         </div>

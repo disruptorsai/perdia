@@ -229,6 +229,18 @@ Unified interface supporting both Claude and OpenAI with a single `invokeLLM()` 
 - Error handling patterns
 - Migration guide from old models
 
+**⚠️ CRITICAL: Image Generation Models - HARD RULE**
+
+**ONLY use these image models:**
+- ✅ `gemini-2.5-flash-image` - Google Gemini 2.5 Flash Image (PRIMARY)
+- ✅ `gpt-image-1` - OpenAI's NEW image model (FALLBACK ONLY)
+
+**NEVER EVER use DALL-E 3:**
+- ❌ `dall-e-3` - FORBIDDEN! DO NOT USE!
+- ❌ `dall-e-2` - FORBIDDEN! DO NOT USE!
+
+This is a **hard rule** throughout the entire codebase. Image generation Edge Function: `supabase/functions/generate-image/`
+
 ```javascript
 import { InvokeLLM } from '@/lib/perdia-sdk';
 

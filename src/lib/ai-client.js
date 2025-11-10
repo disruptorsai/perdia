@@ -205,7 +205,8 @@ export async function invokeLLM(options) {
 
 /**
  * Generate image using AI
- * Currently uses DALL-E 3 via OpenAI
+ * ⚠️ HARD RULE: Uses Gemini 2.5 Flash Image (primary) + gpt-image-1 (fallback)
+ * NEVER USES DALL-E 3!
  *
  * @param {object} options - Image generation options
  * @param {string} options.prompt - Description of the image

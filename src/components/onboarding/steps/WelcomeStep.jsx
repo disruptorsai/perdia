@@ -13,10 +13,10 @@ export default function WelcomeStep({ onNext, onSkip }) {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Hero Section */}
-      <div className="text-center mb-12">
-        {/* Animated logo/icon */}
+      <div className="text-center mb-6">
+        {/* Animated logo */}
         <motion.div
-          className="inline-block mb-6"
+          className="inline-block mb-4"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{
@@ -26,21 +26,25 @@ export default function WelcomeStep({ onNext, onSkip }) {
             delay: 0.1,
           }}
         >
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl">
-            <Sparkles className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center shadow-xl overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="Perdia Education Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
         </motion.div>
 
         {/* Badge */}
         <motion.div {...ANIMATIONS.fadeIn} transition={{ delay: 0.2 }}>
-          <Badge variant="secondary" className="mb-4 text-sm">
+          <Badge variant="secondary" className="mb-3 text-sm">
             {WELCOME_CONTENT.badge}
           </Badge>
         </motion.div>
 
         {/* Title */}
         <motion.h1
-          className="text-4xl font-bold text-gray-900 mb-4"
+          className="text-3xl font-bold text-gray-900 mb-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -50,7 +54,7 @@ export default function WelcomeStep({ onNext, onSkip }) {
 
         {/* Subtitle */}
         <motion.p
-          className="text-xl text-gray-600 mb-6"
+          className="text-lg text-gray-600 mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -60,7 +64,7 @@ export default function WelcomeStep({ onNext, onSkip }) {
 
         {/* Description */}
         <motion.p
-          className="text-base text-gray-500 max-w-2xl mx-auto"
+          className="text-sm text-gray-500 max-w-2xl mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -71,7 +75,7 @@ export default function WelcomeStep({ onNext, onSkip }) {
 
       {/* Stats Section */}
       <motion.div
-        className="grid grid-cols-3 gap-6 mb-12"
+        className="grid grid-cols-3 gap-4 mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
@@ -83,11 +87,11 @@ export default function WelcomeStep({ onNext, onSkip }) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.7 + index * 0.1 }}
           >
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
-              <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            <Card className="p-4 text-center hover:shadow-lg transition-shadow">
+              <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
                 {stat.value}
               </div>
-              <div className="text-sm font-medium text-gray-900 mb-1">
+              <div className="text-xs font-medium text-gray-900 mb-1">
                 {stat.label}
               </div>
               <div className="text-xs text-gray-500">{stat.description}</div>
@@ -98,7 +102,7 @@ export default function WelcomeStep({ onNext, onSkip }) {
 
       {/* Features Grid */}
       <motion.div
-        className="grid grid-cols-2 gap-6 mb-12"
+        className="grid grid-cols-2 gap-4 mb-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
@@ -112,18 +116,18 @@ export default function WelcomeStep({ onNext, onSkip }) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.0 + index * 0.1 }}
             >
-              <Card className="p-6 h-full hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-4">
+              <Card className="p-4 h-full hover:shadow-md transition-shadow">
+                <div className="flex items-start gap-3">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-blue-600" />
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-blue-600" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
+                    <h3 className="font-semibold text-sm text-gray-900 mb-1">
                       {feature.title}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-gray-600">
                       {feature.description}
                     </p>
                   </div>
@@ -134,28 +138,16 @@ export default function WelcomeStep({ onNext, onSkip }) {
         })}
       </motion.div>
 
-      {/* CTA Section */}
+      {/* Info text only - buttons moved to footer */}
       <motion.div
         className="text-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.4 }}
       >
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-xs text-gray-500">
           This quick setup will take about 5-7 minutes
         </p>
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            size="lg"
-            onClick={onNext}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8"
-          >
-            {WELCOME_CONTENT.cta}
-          </Button>
-          <Button variant="ghost" size="lg" onClick={onSkip}>
-            {WELCOME_CONTENT.skipText}
-          </Button>
-        </div>
       </motion.div>
     </div>
   );

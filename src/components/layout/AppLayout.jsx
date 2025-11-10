@@ -82,12 +82,12 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-12">
-        <div className="flex items-center justify-center">
+      <SidebarHeader className="border-b px-4 pb-6 pt-0">
+        <div className="flex items-center justify-center w-full">
           <img
             src="/logo.png"
             alt="Perdia Education Logo"
-            className="h-80 w-auto"
+            className="w-full h-auto object-contain"
           />
         </div>
       </SidebarHeader>
@@ -164,14 +164,14 @@ export default function AppLayout({ children }) {
 
         <div className="flex-1 flex flex-col">
           {/* Mobile header */}
-          <header className="sticky top-0 z-30 flex h-32 items-center gap-4 border-b bg-background px-4 md:hidden">
+          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:hidden">
             <SidebarTrigger>
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
             <img
               src="/logo.png"
               alt="Perdia Education Logo"
-              className="h-28 w-auto"
+              className="h-10 w-auto"
             />
             <div className="ml-auto">
               <HelpMenu />

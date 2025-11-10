@@ -106,21 +106,21 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
-      <motion.div className="text-center mb-8" {...ANIMATIONS.fadeIn}>
-        <Badge variant="secondary" className="mb-4">
+      <motion.div className="text-center mb-4" {...ANIMATIONS.fadeIn}>
+        <Badge variant="secondary" className="mb-2 text-xs">
           {GENERATE_CONTENT.badge}
         </Badge>
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           {GENERATE_CONTENT.title}
         </h2>
-        <p className="text-lg text-gray-600">
+        <p className="text-sm text-gray-600">
           {GENERATE_CONTENT.subtitle}
         </p>
       </motion.div>
 
       {/* Description */}
       <motion.p
-        className="text-gray-600 text-center mb-8"
+        className="text-sm text-gray-600 text-center mb-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -131,20 +131,20 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
       {/* Keyword Display */}
       {onboardingData?.keyword_data && (
         <motion.div
-          className="mb-8"
+          className="mb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50">
+          <Card className="p-3 bg-gradient-to-br from-blue-50 to-purple-50">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-gray-600 mb-1">Target Keyword</div>
-                <div className="text-lg font-semibold text-gray-900">
+                <div className="text-xs text-gray-600 mb-0.5">Target Keyword</div>
+                <div className="text-sm font-semibold text-gray-900">
                   {onboardingData.keyword_data.keyword}
                 </div>
               </div>
-              <Badge variant="outline">New Target</Badge>
+              <Badge variant="outline" className="text-xs">New Target</Badge>
             </div>
           </Card>
         </motion.div>
@@ -152,39 +152,39 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
 
       {/* Agent Info */}
       <motion.div
-        className="mb-8"
+        className="mb-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="p-6">
-          <div className="flex items-start gap-4 mb-4">
+        <Card className="p-3">
+          <div className="flex items-start gap-3 mb-3">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                <AgentIcon className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                <AgentIcon className="w-5 h-5 text-white" />
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="font-semibold text-sm text-gray-900 mb-0.5">
                 {Agent.name}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-gray-600">
                 AI agent specialized in SEO content creation
               </p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700 mb-2">Capabilities:</p>
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-gray-700 mb-1">Capabilities:</p>
             {Agent.capabilities.map((capability, index) => (
               <motion.div
                 key={index}
-                className="flex items-start gap-2 text-sm text-gray-600"
+                className="flex items-start gap-2 text-xs text-gray-600"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1 }}
               >
-                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5" />
                 <span>{capability}</span>
               </motion.div>
             ))}
@@ -202,15 +202,15 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
             exit={{ opacity: 0 }}
           >
             {/* Tips */}
-            <Card className="p-6 mb-6 bg-blue-50 border-blue-200">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-600" />
+            <Card className="p-3 mb-4 bg-blue-50 border-blue-200">
+              <h3 className="font-semibold text-sm text-gray-900 mb-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-600" />
                 What to Expect
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {GENERATE_CONTENT.tips.map((tip, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <li key={index} className="flex items-start gap-2 text-xs text-gray-600">
+                    <CheckCircle2 className="w-3 h-3 text-blue-600 flex-shrink-0 mt-0.5" />
                     <span>{tip}</span>
                   </li>
                 ))}
@@ -218,9 +218,9 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
             </Card>
 
             {error && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="mb-4 py-2">
+                <AlertCircle className="h-3 w-3" />
+                <AlertDescription className="text-xs">{error}</AlertDescription>
               </Alert>
             )}
           </motion.div>
@@ -233,31 +233,31 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
           >
-            <Card className="p-8">
-              <div className="text-center mb-6">
+            <Card className="p-4">
+              <div className="text-center mb-4">
                 <motion.div
-                  className="inline-block mb-4"
+                  className="inline-block mb-3"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                 >
-                  <Sparkles className="w-12 h-12 text-blue-600" />
+                  <Sparkles className="w-10 h-10 text-blue-600" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                   {GENERATE_CONTENT.generatingText}
                 </h3>
-                <p className="text-gray-600">This may take 30-60 seconds</p>
+                <p className="text-xs text-gray-600">This may take 30-60 seconds</p>
               </div>
 
               {/* Progress Bar */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <Progress
                   value={progress}
-                  className="h-3"
+                  className="h-2"
                   indicatorClassName="bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-1000"
                 />
-                <div className="flex justify-between mt-2">
-                  <span className="text-sm text-gray-600">Generating...</span>
-                  <span className="text-sm font-semibold text-blue-600">
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-xs text-gray-600">Generating...</span>
+                  <span className="text-xs font-semibold text-blue-600">
                     {Math.round(progress)}%
                   </span>
                 </div>
@@ -271,10 +271,10 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.5 }}
-                  className="p-4 bg-blue-50 rounded-lg"
+                  className="p-3 bg-blue-50 rounded-lg"
                 >
-                  <p className="text-sm text-gray-700 flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <p className="text-xs text-gray-700 flex items-center gap-2">
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
                     {GENERATE_CONTENT.loadingTips[currentTip]}
                   </p>
                 </motion.div>
@@ -289,26 +289,26 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <Card className="p-8">
+            <Card className="p-4">
               <div className="text-center">
                 <motion.div
-                  className="inline-block mb-4"
+                  className="inline-block mb-3"
                   {...ANIMATIONS.checkmark}
                 >
-                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
                   </div>
                 </motion.div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Article Generated Successfully!
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-xs text-gray-600 mb-3">
                   Your {articleData?.word_count || '~2000'} word SEO-optimized
                   article is ready
                 </p>
-                <Alert className="bg-green-50 border-green-200 text-green-900">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <AlertDescription>
+                <Alert className="bg-green-50 border-green-200 text-green-900 py-2">
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                  <AlertDescription className="text-xs">
                     Moving to completion step...
                   </AlertDescription>
                 </Alert>
@@ -321,21 +321,22 @@ export default function GenerateContentStep({ onNext, onPrevious, onboardingData
       {/* Action Buttons */}
       {!generating && !generationComplete && (
         <motion.div
-          className="flex items-center justify-between mt-8"
+          className="flex items-center justify-between mt-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <Button variant="ghost" onClick={onPrevious}>
+          <Button variant="ghost" size="sm" onClick={onPrevious}>
             Previous
           </Button>
 
           <Button
+            size="sm"
             onClick={handleGenerate}
             disabled={!onboardingData?.keyword_data}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Sparkles className="w-3 h-3 mr-1.5" />
             {GENERATE_CONTENT.generateButtonText}
           </Button>
         </motion.div>

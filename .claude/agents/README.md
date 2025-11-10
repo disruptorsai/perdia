@@ -1,3 +1,8 @@
+---
+name: agents-directory-info
+description: Documentation for the .claude/agents directory structure
+---
+
 # Perdia Project Agents
 
 This directory contains project-specific agent configurations for Claude Code to use when working on the Perdia Education platform.

@@ -155,13 +155,13 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#009fde] to-[#0077b5] text-white px-6 py-12">
+      <div className="bg-gradient-to-r from-[#009fde] to-[#0077b5] text-white px-6 py-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <Smartphone className="w-12 h-12" />
+          <div className="flex items-center gap-3">
+            <Smartphone className="w-10 h-10" />
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold">Perdia Education</h1>
-              <p className="text-blue-100 mt-1">AI-Powered SEO Content Engine & Automation System</p>
+              <h1 className="text-2xl md:text-3xl font-bold">Perdia Education</h1>
+              <p className="text-blue-100 text-sm">AI-Powered SEO Content Engine & Automation System</p>
             </div>
           </div>
         </div>
