@@ -45,6 +45,9 @@ interface LLMRequest {
   temperature?: number;
   max_tokens?: number;
   response_json_schema?: any;
+  // Cost tracking fields
+  content_id?: string;  // Link to content_queue item
+  agent_name?: string;   // Which agent is making this call
 }
 
 interface LLMResponse {
@@ -54,6 +57,101 @@ interface LLMResponse {
     output_tokens: number;
   };
   model: string;
+  cost?: {
+    input_cost: number;
+    output_cost: number;
+    total_cost: number;
+  };
+}
+
+// Token pricing (per 1 million tokens)
+const TOKEN_PRICES = {
+  // Claude Sonnet 4.5 (2025-09-29)
+  'claude-sonnet-4-5-20250929': { input: 3.00, output: 15.00 },
+  'claude-sonnet-4-5': { input: 3.00, output: 15.00 },
+  // Claude Haiku 4.5 (2025-10-01)
+  'claude-haiku-4-5-20251001': { input: 1.00, output: 5.00 },
+  'claude-haiku-4-5': { input: 1.00, output: 5.00 },
+  // Claude Opus 4.1 (2025-08-05)
+  'claude-opus-4-1-20250805': { input: 15.00, output: 75.00 },
+  'claude-opus-4-1': { input: 15.00, output: 75.00 },
+  // OpenAI GPT-4o
+  'gpt-4o': { input: 5.00, output: 15.00 },
+  'gpt-4o-2024-08-06': { input: 2.50, output: 10.00 },
+  // OpenAI GPT-4o-mini
+  'gpt-4o-mini': { input: 0.15, output: 0.60 },
+  'gpt-4o-mini-2024-07-18': { input: 0.15, output: 0.60 },
+};
+
+/**
+ * Calculate cost based on token usage
+ */
+function calculateCost(model: string, inputTokens: number, outputTokens: number) {
+  const pricing = TOKEN_PRICES[model] || TOKEN_PRICES['claude-sonnet-4-5']; // Default to Sonnet pricing
+
+  const inputCost = (inputTokens / 1_000_000) * pricing.input;
+  const outputCost = (outputTokens / 1_000_000) * pricing.output;
+  const totalCost = inputCost + outputCost;
+
+  return {
+    input_cost: inputCost,
+    output_cost: outputCost,
+    total_cost: totalCost,
+    input_cost_per_token: pricing.input / 1_000_000,
+    output_cost_per_token: pricing.output / 1_000_000,
+  };
+}
+
+/**
+ * Log AI usage to database for cost monitoring
+ */
+async function logAIUsage(
+  supabaseClient: any,
+  userId: string | null,
+  contentId: string | null,
+  provider: string,
+  model: string,
+  agentName: string | null,
+  inputTokens: number,
+  outputTokens: number,
+  requestDuration: number,
+  promptLength: number,
+  success: boolean,
+  errorMessage?: string
+) {
+  try {
+    const cost = calculateCost(model, inputTokens, outputTokens);
+
+    const logEntry = {
+      content_id: contentId || null,
+      user_id: userId || null,
+      agent_name: agentName || null,
+      provider,
+      model,
+      prompt_length: promptLength,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      input_cost_per_token: cost.input_cost_per_token,
+      output_cost_per_token: cost.output_cost_per_token,
+      request_duration_ms: requestDuration,
+      response_success: success,
+      error_message: errorMessage || null,
+      cache_hit: false,  // TODO: Implement cache detection
+      cache_savings_pct: 0,
+    };
+
+    const { error } = await supabaseClient
+      .from('ai_usage_logs')
+      .insert(logEntry);
+
+    if (error) {
+      console.error('⚠️ Failed to log AI usage:', error.message);
+    } else {
+      console.log('💰 AI usage logged - Total cost: $' + cost.total_cost.toFixed(6));
+    }
+  } catch (error) {
+    console.error('⚠️ Error logging AI usage:', error.message);
+  }
 }
 
 serve(async (req) => {
@@ -141,7 +239,10 @@ serve(async (req) => {
     console.log('Has prompt:', !!body.prompt);
     console.log('Message count:', body.messages?.length);
 
-    const { provider, model, prompt, messages, system_prompt, temperature, max_tokens, response_json_schema } = body;
+    const { provider, model, prompt, messages, system_prompt, temperature, max_tokens, response_json_schema, content_id, agent_name } = body;
+
+    // Calculate prompt length for cost tracking
+    const promptLength = prompt?.length || messages?.reduce((sum, m) => sum + m.content.length, 0) || 0;
 
     // Validate required fields
     if (!provider || (!prompt && !messages)) {
@@ -152,6 +253,15 @@ serve(async (req) => {
     }
 
     let response: LLMResponse;
+
+    // Create Supabase client for logging (if environment variables available)
+    let supabaseClient = null;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (supabaseUrl && supabaseServiceKey) {
+      supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    }
 
     // Handle Anthropic Claude API
     if (provider === 'claude' || provider === 'anthropic') {
@@ -207,6 +317,13 @@ serve(async (req) => {
       console.log('Input tokens:', anthropicResponse.usage.input_tokens);
       console.log('Output tokens:', anthropicResponse.usage.output_tokens);
 
+      // Calculate cost
+      const cost = calculateCost(
+        anthropicResponse.model,
+        anthropicResponse.usage.input_tokens,
+        anthropicResponse.usage.output_tokens
+      );
+
       response = {
         content: anthropicResponse.content[0].text,
         usage: {
@@ -214,7 +331,30 @@ serve(async (req) => {
           output_tokens: anthropicResponse.usage.output_tokens,
         },
         model: anthropicResponse.model,
+        cost: {
+          input_cost: cost.input_cost,
+          output_cost: cost.output_cost,
+          total_cost: cost.total_cost,
+        },
       };
+
+      // Log usage to database (async, don't wait)
+      const duration = Date.now() - startTime;
+      if (authenticatedUser) {
+        logAIUsage(
+          supabaseClient,
+          authenticatedUser.id,
+          content_id || null,
+          provider,
+          anthropicResponse.model,
+          agent_name || null,
+          anthropicResponse.usage.input_tokens,
+          anthropicResponse.usage.output_tokens,
+          duration,
+          promptLength,
+          true
+        ).catch(err => console.error('Failed to log usage:', err));
+      }
     }
     // Handle OpenAI API
     else if (provider === 'openai') {
@@ -275,6 +415,13 @@ serve(async (req) => {
       console.log('✅ OpenAI response received');
       console.log('Content length:', openaiData.choices[0].message.content.length);
 
+      // Calculate cost
+      const cost = calculateCost(
+        openaiData.model,
+        openaiData.usage.prompt_tokens,
+        openaiData.usage.completion_tokens
+      );
+
       response = {
         content: openaiData.choices[0].message.content,
         usage: {
@@ -282,7 +429,30 @@ serve(async (req) => {
           output_tokens: openaiData.usage.completion_tokens,
         },
         model: openaiData.model,
+        cost: {
+          input_cost: cost.input_cost,
+          output_cost: cost.output_cost,
+          total_cost: cost.total_cost,
+        },
       };
+
+      // Log usage to database (async, don't wait)
+      const duration = Date.now() - startTime;
+      if (authenticatedUser && supabaseClient) {
+        logAIUsage(
+          supabaseClient,
+          authenticatedUser.id,
+          content_id || null,
+          provider,
+          openaiData.model,
+          agent_name || null,
+          openaiData.usage.prompt_tokens,
+          openaiData.usage.completion_tokens,
+          duration,
+          promptLength,
+          true
+        ).catch(err => console.error('Failed to log usage:', err));
+      }
     } else {
       return new Response(
         JSON.stringify({ error: `Unsupported provider: ${provider}` }),
@@ -307,6 +477,34 @@ serve(async (req) => {
     console.error('Error stack:', error.stack);
     console.error(`⏱️ Failed after: ${duration}ms`);
     console.error('========================================');
+
+    // Log failed request to database
+    try {
+      const body = await req.clone().json();
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+      if (supabaseUrl && supabaseServiceKey && authenticatedUser) {
+        const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+        await logAIUsage(
+          supabaseClient,
+          authenticatedUser.id,
+          body.content_id || null,
+          body.provider || 'unknown',
+          body.model || 'unknown',
+          body.agent_name || null,
+          0, // No tokens on error
+          0,
+          duration,
+          body.prompt?.length || 0,
+          false,
+          error.message
+        );
+      }
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
 
     return new Response(
       JSON.stringify({

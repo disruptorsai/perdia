@@ -166,9 +166,10 @@ The Perdia project has **project-level MCP servers** configured for seamless int
 {
   "supabase": {
     "command": "npx",
-    "args": ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref=yvvtsfgryweqfppilkvo"],
+    "args": ["-y", "@modelcontextprotocol/server-supabase@latest", "--project-ref=yvvtsfgryweqfppilkvo"],
     "env": {
-      "SUPABASE_ACCESS_TOKEN": "sbp_..."
+      "SUPABASE_ACCESS_TOKEN": "sbp_...",
+      "SUPABASE_URL": "https://yvvtsfgryweqfppilkvo.supabase.co"
     }
   }
 }
