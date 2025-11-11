@@ -152,6 +152,173 @@ This project includes a **specialized Supabase Database Agent** that automatical
 
 The agent will automatically provide complete migrations, SDK updates, and documentation.
 
+## MCP Server Configuration
+
+The Perdia project has **project-level MCP servers** configured for seamless integration with external services. These are configured in `.claude/mcp.json` and automatically available to Claude Code.
+
+### Configured MCP Servers
+
+#### 1. Supabase MCP Server
+**Purpose:** Direct database access, schema inspection, SQL execution, storage management
+
+**Configuration:**
+```json
+{
+  "supabase": {
+    "command": "npx",
+    "args": ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref=yvvtsfgryweqfppilkvo"],
+    "env": {
+      "SUPABASE_ACCESS_TOKEN": "sbp_..."
+    }
+  }
+}
+```
+
+**When to Use:**
+- Checking database schema before creating tables
+- Executing SQL queries for debugging
+- Verifying RLS policies
+- Inspecting table structure
+- Analyzing query performance with EXPLAIN
+- Managing storage buckets
+
+**Usage Examples:**
+```javascript
+// List all tables
+ListMcpResourcesTool({ server: "supabase" })
+
+// Get specific table schema
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://table/keywords" })
+
+// Execute SQL query
+mcp__supabase__run_sql({ sql: "SELECT COUNT(*) FROM content_queue WHERE status = 'pending_review'" })
+
+// Check storage buckets
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://storage-buckets" })
+```
+
+#### 2. Netlify MCP Server
+**Purpose:** Deployment management, environment variables, build monitoring
+
+**Configuration:**
+```json
+{
+  "netlify": {
+    "command": "npx",
+    "args": ["-y", "@netlify/mcp@latest"],
+    "env": {
+      "NETLIFY_AUTH_TOKEN": "nfp_...",
+      "NETLIFY_SITE_ID": "371d61d6-ad3d-4c13-8455-52ca33d1c0d4"
+    }
+  }
+}
+```
+
+**When to Use:**
+- Deploying to production
+- Managing environment variables
+- Checking build status
+- Monitoring site health
+
+#### 3. Cloudinary MCP Server
+**Purpose:** Image optimization, media asset management
+
+**Configuration:**
+```json
+{
+  "cloudinary": {
+    "command": "npx",
+    "args": ["-y", "@felores/cloudinary-mcp-server@latest"],
+    "env": {
+      "CLOUDINARY_CLOUD_NAME": "dvcvxhzmt",
+      "CLOUDINARY_API_KEY": "...",
+      "CLOUDINARY_API_SECRET": "..."
+    }
+  }
+}
+```
+
+**When to Use:**
+- Optimizing images for blog posts
+- Generating responsive image URLs
+- Managing media assets
+
+#### 4. DataForSEO MCP Server
+**Purpose:** Keyword research, SEO metrics, SERP data
+
+**Configuration:**
+```json
+{
+  "dataforseo": {
+    "command": "npx",
+    "args": ["-y", "dataforseo-mcp-server"],
+    "env": {
+      "DATAFORSEO_USERNAME": "...",
+      "DATAFORSEO_PASSWORD": "..."
+    }
+  }
+}
+```
+
+**When to Use:**
+- Fetching keyword search volume
+- Analyzing keyword difficulty
+- Getting SERP position data
+
+#### 5. Playwright MCP Server
+**Purpose:** Browser automation, testing, debugging deployed sites
+
+**Configuration:**
+```json
+{
+  "playwright": {
+    "command": "npx",
+    "args": ["-y", "@executeautomation/playwright-mcp-server"],
+    "env": {
+      "PLAYWRIGHT_HEADLESS": "false"
+    }
+  }
+}
+```
+
+**When to Use:**
+- Testing deployed features
+- Debugging production issues
+- Automated browser testing
+- Screenshot capture
+
+### MCP Best Practices for Perdia
+
+1. **Always check database schema via MCP before creating tables**
+   ```javascript
+   ReadMcpResourceTool({ server: "supabase", uri: "supabase://tables" })
+   ```
+
+2. **Use MCP for SQL testing before committing migrations**
+   ```javascript
+   mcp__supabase__run_sql({ sql: "EXPLAIN ANALYZE SELECT ..." })
+   ```
+
+3. **Verify deployments via Netlify MCP**
+   ```javascript
+   // Check build status after deployment
+   ```
+
+4. **Optimize images via Cloudinary MCP**
+   ```javascript
+   // Generate responsive URLs
+   ```
+
+5. **Research keywords via DataForSEO MCP**
+   ```javascript
+   // Get real search volume data
+   ```
+
+**Documentation:**
+- MCP Configuration: `.claude/mcp.json`
+- Database Agent MCP Usage: `.claude/docs/agents/perdia-supabase-database-agent.md`
+- Supabase Quick Reference: `docs/SUPABASE_AGENT_QUICK_REFERENCE.md`
+
 ## Essential Commands
 
 ### Development

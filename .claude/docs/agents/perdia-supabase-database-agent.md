@@ -561,6 +561,32 @@ COMMIT;
 
 ## Supabase MCP Server Integration
 
+### MCP Server Configuration
+
+The Perdia project has a **project-level MCP server** configured at `.claude/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=yvvtsfgryweqfppilkvo"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_..."
+      },
+      "description": "Perdia Education Supabase project (yvvtsfgryweqfppilkvo)"
+    }
+  }
+}
+```
+
+**Project Reference:** `yvvtsfgryweqfppilkvo`
+**Project URL:** `https://yvvtsfgryweqfppilkvo.supabase.co`
+
 ### Automatic MCP Usage
 
 **ALWAYS use the Supabase MCP server when:**
@@ -571,32 +597,131 @@ COMMIT;
 - Analyzing performance
 - Checking storage buckets
 - Managing auth users
+- Running SQL commands
+- Inspecting database objects
 
-**MCP Server Commands:**
-```bash
-# Schema inspection
-mcp supabase:describe-table keywords
-mcp supabase:list-tables
+### How to Use MCP Tools
 
-# Query execution
-mcp supabase:query "SELECT * FROM keywords WHERE user_id = {uid} LIMIT 10"
+The Supabase MCP server provides **resources** and **tools** accessible via Claude Code's MCP integration.
 
-# RLS policy check
-mcp supabase:check-policies keywords
+#### Available MCP Resources
+```
+supabase://tables - List all database tables
+supabase://table/{table_name} - Get specific table schema
+supabase://storage-buckets - List all storage buckets
+supabase://functions - List Edge Functions
+supabase://rls-policies - List RLS policies
+```
 
-# Storage management
-mcp supabase:list-buckets
-mcp supabase:bucket-info content-images
+#### Available MCP Tools
+```
+mcp__supabase__run_sql - Execute SQL queries
+mcp__supabase__get_table_schema - Get table schema details
+mcp__supabase__list_tables - List all tables
+mcp__supabase__execute_query - Execute parameterized queries
+mcp__supabase__get_storage_info - Get storage bucket information
+```
+
+### Usage Patterns in Claude Code
+
+**1. List all tables:**
+```javascript
+// Use ListMcpResourcesTool with server filter
+ListMcpResourcesTool({ server: "supabase" })
+// Or read the tables resource directly
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://tables" })
+```
+
+**2. Get table schema:**
+```javascript
+// Read specific table resource
+ReadMcpResourceTool({
+  server: "supabase",
+  uri: "supabase://table/keywords"
+})
+```
+
+**3. Execute SQL query:**
+```javascript
+// Use the run_sql tool
+mcp__supabase__run_sql({
+  sql: "SELECT * FROM keywords WHERE user_id = auth.uid() LIMIT 10"
+})
+```
+
+**4. Check storage buckets:**
+```javascript
+// Read storage buckets resource
+ReadMcpResourceTool({
+  server: "supabase",
+  uri: "supabase://storage-buckets"
+})
 ```
 
 ### When MCP Should Be Used
 
 1. **Before creating tables** - Check if table already exists
+   ```javascript
+   ReadMcpResourceTool({ server: "supabase", uri: "supabase://tables" })
+   ```
+
 2. **Before modifying schema** - Inspect current structure
+   ```javascript
+   ReadMcpResourceTool({ server: "supabase", uri: "supabase://table/keywords" })
+   ```
+
 3. **When debugging queries** - Test queries directly
+   ```javascript
+   mcp__supabase__run_sql({ sql: "SELECT COUNT(*) FROM keywords" })
+   ```
+
 4. **When checking RLS** - Verify policies are correct
+   ```javascript
+   ReadMcpResourceTool({ server: "supabase", uri: "supabase://rls-policies" })
+   ```
+
 5. **When investigating performance** - Analyze query plans
+   ```javascript
+   mcp__supabase__run_sql({
+     sql: "EXPLAIN ANALYZE SELECT * FROM keywords WHERE category = 'degree-programs'"
+   })
+   ```
+
 6. **When managing storage** - Verify bucket configuration
+   ```javascript
+   ReadMcpResourceTool({ server: "supabase", uri: "supabase://storage-buckets" })
+   ```
+
+### Agent Workflow with MCP
+
+**Standard Database Operation Workflow:**
+
+1. **Check existing schema via MCP**
+   - Read tables/schema resources
+   - Verify table doesn't exist (for new tables)
+   - Inspect current structure (for modifications)
+
+2. **Generate migration SQL**
+   - Follow Perdia patterns (UUID, timestamps, RLS)
+   - Include complete migration with indexes and policies
+
+3. **Test migration via MCP (optional)**
+   - Run in transaction (BEGIN...ROLLBACK) to verify syntax
+   - Check for conflicts or issues
+
+4. **Update SDK integration**
+   - Add entity to `src/lib/perdia-sdk.js`
+   - Export new entity
+
+5. **Update documentation**
+   - Add table to CLAUDE.md
+   - Document in agent file
+   - Update quick reference
+
+6. **Verify via MCP**
+   - Check table created successfully
+   - Verify indexes exist
+   - Confirm RLS policies active
 
 ## Agent Responsibilities
 

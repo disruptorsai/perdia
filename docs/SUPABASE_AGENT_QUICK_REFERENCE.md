@@ -9,6 +9,110 @@ The agent **automatically activates** when these keywords are detected:
 - rls, query, index, storage, bucket, auth
 - optimize, performance, slow query, error
 
+## MCP Server Integration
+
+The Perdia project has a **Supabase MCP server** configured for direct database access.
+
+### Configuration Location
+`.claude/mcp.json` (project-level configuration)
+
+### MCP Server Details
+- **Server Name:** `supabase`
+- **Package:** `@supabase/mcp-server-supabase@latest`
+- **Project Ref:** `yvvtsfgryweqfppilkvo`
+- **Project URL:** `https://yvvtsfgryweqfppilkvo.supabase.co`
+
+### Quick MCP Commands
+
+**List all tables:**
+```javascript
+ListMcpResourcesTool({ server: "supabase" })
+// or
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://tables" })
+```
+
+**Get table schema:**
+```javascript
+ReadMcpResourceTool({
+  server: "supabase",
+  uri: "supabase://table/keywords"
+})
+```
+
+**Execute SQL query:**
+```javascript
+mcp__supabase__run_sql({
+  sql: "SELECT * FROM keywords WHERE status = 'queued' LIMIT 5"
+})
+```
+
+**Check storage buckets:**
+```javascript
+ReadMcpResourceTool({
+  server: "supabase",
+  uri: "supabase://storage-buckets"
+})
+```
+
+**Analyze query performance:**
+```javascript
+mcp__supabase__run_sql({
+  sql: "EXPLAIN ANALYZE SELECT * FROM content_queue WHERE status = 'pending_review'"
+})
+```
+
+**Check RLS policies:**
+```javascript
+ReadMcpResourceTool({
+  server: "supabase",
+  uri: "supabase://rls-policies"
+})
+```
+
+### Available MCP Resources
+- `supabase://tables` - List all database tables
+- `supabase://table/{table_name}` - Get specific table schema
+- `supabase://storage-buckets` - List all storage buckets
+- `supabase://functions` - List Edge Functions
+- `supabase://rls-policies` - List RLS policies
+
+### Available MCP Tools
+- `mcp__supabase__run_sql` - Execute SQL queries
+- `mcp__supabase__get_table_schema` - Get table schema details
+- `mcp__supabase__list_tables` - List all tables
+- `mcp__supabase__execute_query` - Execute parameterized queries
+- `mcp__supabase__get_storage_info` - Get storage bucket information
+
+### When to Use MCP
+
+**Always use MCP before:**
+1. Creating new tables (check if exists)
+2. Modifying schema (inspect current structure)
+3. Adding indexes (verify query patterns)
+4. Creating migrations (test SQL syntax)
+5. Debugging queries (test directly)
+6. Checking RLS policies (verify security)
+
+**Example Workflow:**
+```javascript
+// Step 1: Check if table exists
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://tables" })
+
+// Step 2: Inspect existing structure (if modifying)
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://table/keywords" })
+
+// Step 3: Test query performance
+mcp__supabase__run_sql({
+  sql: "EXPLAIN ANALYZE SELECT * FROM keywords WHERE category = 'degree-programs'"
+})
+
+// Step 4: Apply migration
+// (create migration file following Perdia patterns)
+
+// Step 5: Verify via MCP
+ReadMcpResourceTool({ server: "supabase", uri: "supabase://table/new_table" })
+```
+
 ## Quick Commands
 
 ### Asking for Help
