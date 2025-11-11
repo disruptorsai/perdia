@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CheckSquare, Check, X, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { CheckSquare, Check, X, Eye, Loader2, AlertCircle, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import PublishToWordPress from '../components/content/PublishToWordPress';
+import ImageEnlargeDialog from '../components/content/ImageEnlargeDialog';
 
 export default function ApprovalQueue() {
   const [queue, setQueue] = useState([]);
@@ -16,6 +17,8 @@ export default function ApprovalQueue() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [enlargeImageOpen, setEnlargeImageOpen] = useState(false);
+  const [enlargeImageData, setEnlargeImageData] = useState(null);
 
   useEffect(() => {
     loadQueue();
@@ -60,7 +63,7 @@ export default function ApprovalQueue() {
       toast.error('Please provide rejection notes');
       return;
     }
-    
+
     setProcessing(true);
     try {
       await ContentQueue.update(item.id, {
@@ -77,6 +80,15 @@ export default function ApprovalQueue() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleEnlargeImage = (item) => {
+    setEnlargeImageData({
+      url: item.featured_image_url,
+      alt: item.featured_image_alt_text || item.title,
+      title: item.title
+    });
+    setEnlargeImageOpen(true);
   };
 
   const getTypeColor = (type) => {
@@ -130,6 +142,26 @@ export default function ApprovalQueue() {
             <Card key={item.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  {/* Thumbnail */}
+                  {item.featured_image_url && (
+                    <div
+                      className="relative w-full sm:w-48 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100 cursor-pointer group"
+                      onClick={() => handleEnlargeImage(item)}
+                    >
+                      <img
+                        src={item.featured_image_url}
+                        alt={item.featured_image_alt_text || item.title}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                        <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                        {item.featured_image_source === 'ai_generated' ? 'AI Generated' :
+                         item.featured_image_source === 'upload' ? 'Uploaded' : 'Stock'}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-slate-900 mb-2">{item.title}</h3>
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -196,9 +228,30 @@ export default function ApprovalQueue() {
                 </Button>
               </div>
             </CardHeader>
-            
+
             <div className="flex-1 overflow-y-auto p-6">
-              <div 
+              {/* Featured Image */}
+              {selectedItem.featured_image_url && (
+                <div className="mb-6">
+                  <div
+                    className="relative w-full h-64 rounded-lg overflow-hidden bg-slate-100 cursor-pointer group"
+                    onClick={() => handleEnlargeImage(selectedItem)}
+                  >
+                    <img
+                      src={selectedItem.featured_image_url}
+                      alt={selectedItem.featured_image_alt_text || selectedItem.title}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
+                      <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                  {selectedItem.featured_image_alt_text && (
+                    <p className="text-sm text-slate-500 mt-2 italic">{selectedItem.featured_image_alt_text}</p>
+                  )}
+                </div>
+              )}
+              <div
                 className="prose max-w-none mb-6"
                 dangerouslySetInnerHTML={{ __html: selectedItem.content }}
               />
@@ -245,6 +298,16 @@ export default function ApprovalQueue() {
             </div>
           </Card>
         </div>
+      )}
+
+      {enlargeImageOpen && enlargeImageData && (
+        <ImageEnlargeDialog
+          isOpen={enlargeImageOpen}
+          onClose={() => setEnlargeImageOpen(false)}
+          imageUrl={enlargeImageData.url}
+          imageAlt={enlargeImageData.alt}
+          title={enlargeImageData.title}
+        />
       )}
     </div>
   );
