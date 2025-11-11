@@ -1,8 +1,57 @@
 # Perdia Documentation Index
 
-**Last Updated:** 2025-01-07
+**Last Updated:** 2025-11-10
 
 This document provides a comprehensive index of all Perdia project documentation organized by category.
+
+---
+
+## 🆕 NEW: Corrected PRD & Implementation Plan (Nov 2025)
+
+**CRITICAL:** Platform is **75% complete** (not 0%). 4-week path to MVP (not 6-8 weeks).
+
+### Production-Ready Documents:
+
+📁 **[docs/production-ready-plan/](production-ready-plan/)** - Complete implementation folder
+- [README.md](production-ready-plan/README.md) - Folder overview & quick start
+
+1. **[production-ready-plan/PERDIA_PRD_CORRECTED.md](production-ready-plan/PERDIA_PRD_CORRECTED.md)** - ⚠️ **Master PRD with accurate assessment**
+   - Corrected implementation state (75% complete)
+   - Validated client requirements (shortcodes, 5-day SLA, quotes)
+   - 4-week sprint plan
+   - Success metrics & risk mitigation
+
+2. **[production-ready-plan/IMPLEMENTATION_GUIDE.md](production-ready-plan/IMPLEMENTATION_GUIDE.md)** - ⚠️ **Step-by-step developer guide**
+   - Sprint-by-sprint tasks (Day 1-5 breakdown)
+   - Code examples for every component
+   - Testing procedures
+   - Troubleshooting guide
+
+3. **[production-ready-plan/TECHNICAL_SPECS.md](production-ready-plan/TECHNICAL_SPECS.md)** - ⚠️ **Consolidated technical specifications**
+   - WordPress integration (REST API + direct DB)
+   - Shortcode system (transformation, validation)
+   - Quote sourcing (Reddit, Twitter, forums)
+   - Approval workflow (5-day SLA)
+   - Cost monitoring (<$10/article)
+   - Database access patterns
+   - Testing procedures
+
+4. **[CLAUDE.md](../CLAUDE.md)** - ⚠️ **Updated with current implementation state**
+   - New section: "Current Implementation State (Nov 2025)"
+   - MANDATORY client requirements
+   - 4-week sprint overview
+
+### Key Corrections from Earlier Assessments:
+- ❌ WordPress integration: "0% complete" → ✅ **75% complete**
+- ❌ CSV import: "40% complete" → ✅ **90% complete**
+- ❌ Automation backend: "missing" → ✅ **85% complete**
+- ❌ Timeline: "6-8 weeks" → ✅ **4 weeks feasible**
+
+### Start Here for New Implementation:
+1. Read: `production-ready-plan/PERDIA_PRD_CORRECTED.md` (Project Managers & Stakeholders)
+2. Implement: `production-ready-plan/IMPLEMENTATION_GUIDE.md` (Developers)
+3. Reference: `production-ready-plan/TECHNICAL_SPECS.md` (Code examples & patterns)
+4. Overview: `production-ready-plan/README.md` (Quick start & orientation)
 
 ---
 

@@ -398,7 +398,7 @@ Return ONLY the image prompt, nothing else.`,
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-800">
-                <strong>Powered by:</strong> Google Gemini 2.5 Flash Image ("Nano Banana") with OpenAI gpt-image-1 fallback. Generates professional article hero images optimized for your content.
+                <strong>Powered by:</strong> Google Gemini 2.5 Flash Image ("Nano Banana" 🍌). Generates professional article hero images optimized for your content in 10-30 seconds.
               </p>
             </div>
           </TabsContent>

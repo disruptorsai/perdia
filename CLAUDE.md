@@ -27,6 +27,89 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Components:** Radix UI, Recharts, Framer Motion
 - **Routing:** React Router v7
 
+## Current Implementation State (Nov 2025)
+
+**CRITICAL: Platform is 75% complete, not starting from zero.**
+
+### ✅ What's Already Built (Production-Ready):
+
+1. **WordPress Integration** - **75% Complete**
+   - Full REST API client (`src/lib/wordpress-client.js` - 452 lines)
+   - Featured image upload, categories/tags support
+   - Retry logic and error handling
+   - **Missing:** Direct database access, shortcode system (25%)
+
+2. **Keyword Management** - **90% Complete**
+   - CSV import/export fully functional (`KeywordManager.jsx` lines 111-157)
+   - Auto-header detection, bulk operations
+   - **Missing:** Keyword rotation algorithm (10%)
+
+3. **Automation Backend** - **85% Complete**
+   - Cron jobs configured (`20251107000003_setup_cron_jobs.sql`)
+   - Edge Functions: `auto-schedule-content`, `publish-scheduled-content`
+   - **Missing:** Frontend UI controls (15%)
+
+4. **Content Queue & Approval** - **95% Complete**
+   - Full ApprovalQueue.jsx with status workflow
+   - **Missing:** 5-day SLA auto-publish timer (5%)
+
+5. **Image Generation** - **100% Compliant**
+   - Correctly uses Gemini 2.5 Flash Image + gpt-image-1 (no DALL-E 3)
+   - Follows HARD RULES exactly
+
+### 🚧 What Needs to Be Built (4-Week MVP):
+
+**Sprint 1 (Week 1):**
+- WordPress database connection (hybrid REST API + direct DB)
+- Shortcode transformation system (MANDATORY per client)
+- Pre-publish validator
+- 5-day SLA auto-publish workflow
+
+**Sprint 2 (Week 2):**
+- Quote scraping (Reddit, Twitter, GetEducated forums)
+- Cost monitoring middleware (<$10/article target)
+- Keyword rotation algorithm
+
+**Sprint 3 (Week 3):**
+- Integration testing
+- Sarah training (primary reviewer)
+- Bug fixes
+
+**Sprint 4 (Week 4):**
+- Production deployment
+- Monitor first 50 articles
+- Client approval for scale-up
+
+### 📖 New Documentation (Nov 2025):
+
+**📁 Folder:** `docs/production-ready-plan/` - All new implementation docs organized here
+
+- **`docs/production-ready-plan/README.md`** - Folder overview & quick start guide
+- **`docs/production-ready-plan/PERDIA_PRD_CORRECTED.md`** - Master PRD with accurate implementation state
+- **`docs/production-ready-plan/IMPLEMENTATION_GUIDE.md`** - Step-by-step developer guide (4-week sprints)
+- **`docs/production-ready-plan/TECHNICAL_SPECS.md`** - WordPress integration, shortcodes, quotes, workflow, cost monitoring, DB access, testing
+
+### 🔴 MANDATORY Client Requirements (Validated via Transcript):
+
+1. **Shortcodes** - All links MUST use GetEducated.com shortcodes (monetization tracking)
+   - Internal: `[ge_internal_link url="..."]text[/ge_internal_link]`
+   - Affiliate: `[ge_affiliate_link url="..."]text[/ge_affiliate_link]`
+   - External: `[ge_external_link url="..."]text[/ge_external_link]`
+
+2. **5-Day SLA Auto-Publish** - Articles auto-publish if not reviewed within 5 days (validation must pass)
+
+3. **Real Quote Sourcing** - Scrape Reddit, Twitter/X, GetEducated forums (60%+ real quotes, not fictional)
+
+4. **WordPress Database Access** - Direct MySQL connection for complex queries (in addition to REST API)
+
+5. **Cost Monitoring** - Track AI spend per article (target: <$10/article)
+
+**See `docs/production-ready-plan/` folder for all implementation documentation:**
+- **Complete requirements:** `PERDIA_PRD_CORRECTED.md`
+- **Sprint-by-sprint plan:** `IMPLEMENTATION_GUIDE.md`
+- **Technical specifications:** `TECHNICAL_SPECS.md`
+- **Quick start:** `README.md`
+
 ## Project-Specific Agents
 
 This project includes a **specialized Supabase Database Agent** that automatically assists with all database operations.
