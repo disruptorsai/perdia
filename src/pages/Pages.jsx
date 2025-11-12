@@ -26,6 +26,11 @@ import ContentCalendar from './ContentCalendar';
 import TeamChat from './TeamChat';
 import Profile from './Profile';
 
+// Perdia V2 - New Pages
+import TopicQuestionsManager from './TopicQuestionsManager';
+import PipelineConfiguration from './PipelineConfiguration';
+import Settings from './Settings';
+
 // Auth wrapper component
 function AuthenticatedRoute({ children }) {
   const [user, setUser] = useState(null);
@@ -102,6 +107,7 @@ export default function Pages() {
                   <Route path="/content" element={<ContentLibrary />} />
                   <Route path="/content/edit/:id" element={<ContentEditor />} />
                   <Route path="/approvals" element={<ApprovalQueue />} />
+                  <Route path="/approval-queue" element={<ApprovalQueue />} />
                   <Route path="/automation" element={<AutomationControls />} />
                   <Route path="/wordpress" element={<WordPressConnection />} />
                   <Route path="/performance" element={<PerformanceDashboard />} />
@@ -110,6 +116,11 @@ export default function Pages() {
                   <Route path="/calendar" element={<ContentCalendar />} />
                   <Route path="/chat" element={<TeamChat />} />
                   <Route path="/profile" element={<Profile />} />
+
+                  {/* Perdia V2 - New Routes */}
+                  <Route path="/topic-questions" element={<TopicQuestionsManager />} />
+                  <Route path="/pipeline-config" element={<PipelineConfiguration />} />
+                  <Route path="/settings" element={<Settings />} />
 
                   {/* Catch-all redirect to dashboard */}
                   <Route path="*" element={<Navigate to="/" replace />} />

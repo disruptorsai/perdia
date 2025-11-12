@@ -57,6 +57,23 @@ const OPENAI_MODELS = {
   'default': 'gpt-4o',
 };
 
+// Perdia V2: Grok models (xAI)
+const GROK_MODELS = {
+  'grok-2': 'grok-2',                           // Grok 2 (content generation)
+  'grok-2-mini': 'grok-2-mini',                 // Grok 2 Mini (fast, cost-effective)
+  'grok-beta': 'grok-beta',                     // Beta version
+  'default': 'grok-2',
+};
+
+// Perdia V2: Perplexity models (fact-checking & research)
+const PERPLEXITY_MODELS = {
+  'pplx-7b-online': 'pplx-7b-online',           // Online model with web search
+  'pplx-70b-online': 'pplx-70b-online',         // Larger online model
+  'pplx-7b-chat': 'pplx-7b-chat',               // Chat model
+  'pplx-70b-chat': 'pplx-70b-chat',             // Larger chat model
+  'default': 'pplx-70b-online',                 // Use online model for fact-checking
+};
+
 // Get default provider from environment or fallback to claude
 const DEFAULT_PROVIDER = import.meta.env.VITE_DEFAULT_AI_PROVIDER || 'claude';
 
@@ -103,6 +120,10 @@ export async function invokeLLM(options) {
       actualModel = model || CLAUDE_MODELS.default;
     } else if (provider === 'openai' || provider === 'gpt') {
       actualModel = model || OPENAI_MODELS.default;
+    } else if (provider === 'grok' || provider === 'xai') {
+      actualModel = model || GROK_MODELS.default;
+    } else if (provider === 'perplexity' || provider === 'pplx') {
+      actualModel = model || PERPLEXITY_MODELS.default;
     } else {
       // Default to Claude
       actualModel = CLAUDE_MODELS.default;

@@ -488,6 +488,16 @@ export const AgentDefinition = new BaseEntity('agent_definitions');
 export const AgentConversation = new BaseEntity('agent_conversations');
 export const AgentMessage = new BaseEntity('agent_messages');
 
+// Perdia V2: Pipeline & Content Source Entities
+export const PipelineConfiguration = new BaseEntity('pipeline_configurations');
+export const TopicQuestion = new BaseEntity('topic_questions');
+export const ScrapedQuote = new BaseEntity('scraped_quotes');
+
+// Sprint 1: Production-Ready Entities
+export const ShortcodeValidationLog = new BaseEntity('shortcode_validation_logs');
+export const QuoteSource = new BaseEntity('quote_sources');
+export const AIUsageLog = new BaseEntity('ai_usage_logs');
+
 // Legacy Entities (NOT USED - kept for compatibility)
 export const Client = new BaseEntity('clients'); // Not implemented
 export const Project = new BaseEntity('projects'); // Not implemented
@@ -916,6 +926,13 @@ export const perdia = {
     AgentDefinition,
     AgentConversation,
     AgentMessage,
+    // Perdia V2 Entities
+    PipelineConfiguration,
+    TopicQuestion,
+    ScrapedQuote,
+    ShortcodeValidationLog,
+    QuoteSource,
+    AIUsageLog,
     // Legacy Entities (not implemented)
     Client,
     Project,
