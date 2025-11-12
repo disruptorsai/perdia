@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Settings as SettingsIcon,
   Zap,
-  Wordpress,
+  Globe,
   Cpu,
   Workflow,
   Loader2,
@@ -246,7 +246,7 @@ export default function Settings() {
             Automation
           </TabsTrigger>
           <TabsTrigger value="wordpress">
-            <Wordpress className="w-4 h-4 mr-2" />
+            <Globe className="w-4 h-4 mr-2" />
             WordPress
           </TabsTrigger>
           <TabsTrigger value="ai">
