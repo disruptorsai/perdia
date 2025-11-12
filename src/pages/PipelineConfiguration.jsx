@@ -16,7 +16,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { PipelineConfiguration } from '@/lib/perdia-sdk';
+import { PipelineConfiguration as PipelineConfigurationEntity } from '@/lib/perdia-sdk';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,7 +96,7 @@ export default function PipelineConfiguration() {
   const loadPipelines = async () => {
     setLoading(true);
     try {
-      const data = await PipelineConfiguration.find(
+      const data = await PipelineConfigurationEntity.find(
         {},
         { orderBy: { column: 'is_active', ascending: false } }
       );
@@ -115,11 +115,11 @@ export default function PipelineConfiguration() {
       await Promise.all(
         pipelines
           .filter(p => p.is_active)
-          .map(p => PipelineConfiguration.update(p.id, { is_active: false }))
+          .map(p => PipelineConfigurationEntity.update(p.id, { is_active: false }))
       );
 
       // Activate this one
-      await PipelineConfiguration.update(id, { is_active: true });
+      await PipelineConfigurationEntity.update(id, { is_active: true });
 
       toast.success('Pipeline activated');
       loadPipelines();
@@ -138,7 +138,7 @@ export default function PipelineConfiguration() {
         is_active: false
       };
 
-      await PipelineConfiguration.create(newPipeline);
+      await PipelineConfigurationEntity.create(newPipeline);
 
       toast.success('Pipeline duplicated');
       loadPipelines();
@@ -159,7 +159,7 @@ export default function PipelineConfiguration() {
     if (!confirm('Are you sure you want to delete this pipeline?')) return;
 
     try {
-      await PipelineConfiguration.delete(id);
+      await PipelineConfigurationEntity.delete(id);
       toast.success('Pipeline deleted');
       loadPipelines();
     } catch (error) {
@@ -405,10 +405,10 @@ function PipelineEditorModal({ pipeline, isOpen, onClose, onSave }) {
       };
 
       if (pipeline) {
-        await PipelineConfiguration.update(pipeline.id, data);
+        await PipelineConfigurationEntity.update(pipeline.id, data);
         toast.success('Pipeline updated');
       } else {
-        await PipelineConfiguration.create(data);
+        await PipelineConfigurationEntity.create(data);
         toast.success('Pipeline created');
       }
 
