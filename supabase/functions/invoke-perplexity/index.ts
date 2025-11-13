@@ -68,8 +68,9 @@ serve(async (req) => {
     }
 
     // Build request body
+    // Note: Perplexity updated models in Jan 2025 - use 'sonar-pro' instead of 'pplx-70b-online'
     const requestBody: any = {
-      model: model || 'pplx-70b-online',
+      model: model || 'sonar-pro',  // Default to sonar-pro (best quality with citations)
       messages: [
         { role: 'user', content: fullPrompt }
       ],

@@ -66,12 +66,21 @@ const GROK_MODELS = {
 };
 
 // Perdia V2: Perplexity models (fact-checking & research)
+// Updated January 2025: https://docs.perplexity.ai/getting-started/models
 const PERPLEXITY_MODELS = {
-  'pplx-7b-online': 'pplx-7b-online',           // Online model with web search
-  'pplx-70b-online': 'pplx-70b-online',         // Larger online model
-  'pplx-7b-chat': 'pplx-7b-chat',               // Chat model
-  'pplx-70b-chat': 'pplx-70b-chat',             // Larger chat model
-  'default': 'pplx-70b-online',                 // Use online model for fact-checking
+  'sonar': 'sonar',                             // Fast, lightweight with citations
+  'sonar-pro': 'sonar-pro',                     // Advanced with more citations (RECOMMENDED)
+  'sonar-reasoning': 'sonar-reasoning',         // For problem-solving tasks
+  'sonar-reasoning-pro': 'sonar-reasoning-pro', // Advanced reasoning
+  'sonar-deep-research': 'sonar-deep-research', // Expert-level research
+
+  // Legacy aliases (auto-converted to new names)
+  'pplx-7b-online': 'sonar',                    // Deprecated -> sonar
+  'pplx-70b-online': 'sonar-pro',               // Deprecated -> sonar-pro
+  'pplx-7b-chat': 'sonar',                      // Deprecated -> sonar
+  'pplx-70b-chat': 'sonar-pro',                 // Deprecated -> sonar-pro
+
+  'default': 'sonar-pro',                       // Use sonar-pro for best quality
 };
 
 // Get default provider from environment or fallback to claude

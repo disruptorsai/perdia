@@ -27,20 +27,32 @@ import { supabase } from './supabase-client';
 // MODEL CONFIGURATIONS
 // =====================================================
 
+// Perplexity updated models in January 2025
+// https://docs.perplexity.ai/getting-started/models
 export const PERPLEXITY_MODELS = {
-  'pplx-7b-online': 'pplx-7b-online',         // Fast online model
-  'pplx-70b-online': 'pplx-70b-online',       // Full online model (recommended)
-  'pplx-7b-chat': 'pplx-7b-chat',             // Chat model (no search)
-  'pplx-70b-chat': 'pplx-70b-chat',           // Larger chat model
-  'default': 'pplx-70b-online'
+  'sonar': 'sonar',                           // Fast, lightweight with citations
+  'sonar-pro': 'sonar-pro',                   // Advanced with more citations (RECOMMENDED)
+  'sonar-reasoning': 'sonar-reasoning',       // For problem-solving tasks
+  'sonar-reasoning-pro': 'sonar-reasoning-pro', // Advanced reasoning
+  'sonar-deep-research': 'sonar-deep-research', // Expert-level research
+
+  // Legacy aliases (auto-converted to new names)
+  'pplx-7b-online': 'sonar',                  // Deprecated -> sonar
+  'pplx-70b-online': 'sonar-pro',             // Deprecated -> sonar-pro
+  'pplx-7b-chat': 'sonar',                    // Deprecated -> sonar
+  'pplx-70b-chat': 'sonar-pro',               // Deprecated -> sonar-pro
+
+  'default': 'sonar-pro'                      // Use sonar-pro for best quality
 };
 
-// Perplexity pricing (as of Nov 2025 - example pricing)
+// Perplexity pricing (January 2025 - official pricing)
+// Source: https://www.perplexity.ai/hub/blog/introducing-the-sonar-pro-api
 const PRICING = {
-  'pplx-7b-online': 0.2,    // $ per 1M tokens
-  'pplx-70b-online': 1.0,   // $ per 1M tokens
-  'pplx-7b-chat': 0.2,
-  'pplx-70b-chat': 1.0,
+  'sonar': 1.0,              // $1 per 1M I/O tokens + $5-12 per 1000 requests
+  'sonar-pro': 9.0,          // $3/1M input + $15/1M output + $6-14 per 1000 requests (avg ~$9)
+  'sonar-reasoning': 5.0,    // Estimated pricing
+  'sonar-reasoning-pro': 12.0, // Estimated pricing
+  'sonar-deep-research': 20.0, // Estimated pricing
 };
 
 // =====================================================
@@ -63,7 +75,7 @@ export async function invokePerplexity(options) {
   const {
     prompt,
     content = null,
-    model = 'pplx-70b-online',
+    model = 'sonar-pro', // Default to sonar-pro (best quality with citations)
     searchDomainFilter = [],
     temperature = 0.2, // Low temperature for factual accuracy
     maxTokens = 2000,
