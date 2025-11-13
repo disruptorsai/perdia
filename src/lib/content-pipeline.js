@@ -169,7 +169,7 @@ No text overlay.
 
       // AI Model Tracking
       model_primary: 'grok-2',
-      model_verify: runVerification ? 'pplx-70b-online' : null,
+      model_verify: runVerification ? 'sonar-pro' : null,
       generation_cost: grokCost,
       verification_cost: perplexityCost,
 
@@ -177,11 +177,8 @@ No text overlay.
       validation_status: validateArticle(articleContent, verificationResult),
       validation_errors: getValidationErrors(articleContent, verificationResult),
 
-      // Verification Results (for display)
-      verificationResult,
-
-      // Performance
-      generation_time: elapsedTime,
+      // Note: generation_time and verificationResult are not stored in DB
+      // They can be calculated from timestamps if needed
     };
 
   } catch (error) {
