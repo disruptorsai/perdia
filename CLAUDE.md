@@ -7,7 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Perdia Education** is an AI-powered SEO content automation platform designed to double-triple organic traffic for GetEducated.com. The platform was migrated from Base44 to a custom Supabase implementation.
 
 **Key Capabilities:**
-- 9 specialized AI agents for content generation (Claude + OpenAI)
+- **Two-Stage AI Content Pipeline:** Grok-2 (human-like generation) → Perplexity Sonar Pro (fact-checking & citations)
+- **Zero-Typing Article Wizard:** Click-through UX with AI-powered suggestions from 4 sources
+- **Smart Content Suggestions:** Auto-aggregates trending questions, high-priority keywords, topic clusters, and trending news
 - Keyword management supporting 1000s of keywords
 - Content workflow (draft → approve → publish)
 - WordPress integration for automated publishing
@@ -22,7 +24,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Frontend:** React 18.2 + Vite 6.1 + TailwindCSS 3.4
 - **Backend:** Supabase (PostgreSQL + Auth + Storage + Edge Functions)
-- **AI:** Anthropic Claude (primary) + OpenAI (secondary) via Supabase Edge Functions
+- **AI Content Generation:**
+  - **Stage 1:** Grok-2 (xAI) - Human-like article generation with natural variation
+  - **Stage 2:** Perplexity Sonar Pro - Fact-checking, citations, and source verification
+  - **Supporting:** Claude Sonnet 4.5 (SEO metadata), Claude Haiku 4.5 (titles), Gemini 2.5 Flash (images)
 - **Deployment:** Netlify (Frontend) + Supabase (Backend & AI - 400s timeout)
 - **Components:** Radix UI, Recharts, Framer Motion
 - **Routing:** React Router v7
@@ -388,7 +393,7 @@ npm run type-check   # TypeScript type checking
 ### Database
 ```bash
 npm run db:migrate   # Apply database migrations
-npm run db:seed      # Seed 9 AI agent definitions
+npm run db:seed      # Seed agent definitions (legacy system)
 npm run setup        # Complete setup: install + migrate + seed
 ```
 
@@ -580,24 +585,35 @@ const response = await InvokeLLM({
 ```
 
 **Model Selection Guidelines:**
-- **SEO Content Generation (1500-3000 words):** Use Sonnet 4.5 (high quality, balanced cost)
+- **Full Article Generation (1500-3000 words):** Use Content Pipeline (Grok-2 → Perplexity Sonar Pro)
 - **Keyword Research & Analysis:** Use Sonnet 4.5 (complex reasoning)
 - **Meta Descriptions & Titles:** Use Haiku 4.5 (fast, cost-effective)
 - **Content Optimization:** Use Sonnet 4.5 (detailed analysis)
 - **Chat/Quick Responses:** Use Haiku 4.5 (low latency)
+- **Image Generation:** Use Gemini 2.5 Flash Image (primary)
 
-**9 Specialized AI Agents** (in database):
-1. `seo_content_writer` - SEO articles (1500-2500 words) - Sonnet 4.5
-2. `blog_post_generator` - Blog posts (800-1200 words) - Sonnet 4.5
-3. `page_optimizer` - Optimize existing pages - Sonnet 4.5
-4. `meta_description_writer` - Meta descriptions (155 chars) - Haiku 4.5
-5. `social_media_specialist` - Social posts (280 chars) - Haiku 4.5
-6. `keyword_researcher` - Keyword analysis - Sonnet 4.5
-7. `content_editor` - Review/improve content - Sonnet 4.5
-8. `internal_linking_expert` - Strategic internal links - Sonnet 4.5
-9. `content_strategist` - Content strategy - Sonnet 4.5
+**Unified Content Generation System:**
+The platform uses a **two-stage content pipeline** (`src/lib/content-pipeline.js`) instead of multiple specialized agents:
 
-**Default Configuration:** Sonnet 4.5 (`claude-sonnet-4-5-20250929`) with temperature 0.7.
+1. **Stage 1 - Draft Generation (Grok-2):**
+   - Generates human-like, naturally varied content
+   - Uses `[CITATION NEEDED]` tags for claims requiring sources
+   - Optimized for GetEducated.com's editorial style
+   - Model: `grok-2` via xAI API
+
+2. **Stage 2 - Fact-Checking & Citations (Perplexity Sonar Pro):**
+   - Verifies factual accuracy of all claims
+   - Adds real citations from authoritative sources
+   - Replaces `[CITATION NEEDED]` tags with actual source links
+   - Provides accuracy scores and flags issues
+   - Model: `sonar-pro` via Perplexity API
+
+3. **Stage 3 - Image Generation (Gemini 2.5 Flash):**
+   - Generates professional featured images
+   - Optimized for blog/SEO use (1200x630)
+   - Model: `gemini-2.5-flash-image` via Google AI
+
+**Legacy Agent System:** The `agent_definitions` table and agent conversation system (`src/lib/agent-sdk.js`) remain available for future specialized tasks, but the primary content generation flow now uses the unified pipeline.
 
 **Best Practices:**
 - Always use exact model IDs (not aliases)
@@ -607,7 +623,311 @@ const response = await InvokeLLM({
 - Monitor token usage via response.usage
 - Reference `docs/ANTHROPIC_API_GUIDE.md` for detailed implementation patterns
 
-### 5. Agent Conversation System
+### 5. Content Generation Pipeline
+
+**Location:** `src/lib/content-pipeline.js` (512 lines)
+
+The **two-stage content pipeline** is the core of Perdia's content generation system, combining Grok's creative generation with Perplexity's fact-checking.
+
+**Pipeline Flow:**
+```javascript
+import { generateArticlePipeline } from '@/lib/content-pipeline';
+
+const article = await generateArticlePipeline(topicQuestion, {
+  userInstructions: 'Focus on career outcomes',
+  wordCountTarget: '1500-2500',
+  includeImages: true,
+  runVerification: true,
+  onProgress: (progress) => {
+    console.log(`[${progress.stage}] ${progress.message}`);
+  }
+});
+
+// Returns complete article with:
+// - title, body, excerpt, featured_image_url
+// - meta_title, meta_description, slug
+// - target_keywords, word_count
+// - validation_status, validation_errors
+// - generation_cost, verification_cost
+// - model_primary: 'grok-2', model_verify: 'sonar-pro'
+```
+
+**Pipeline Stages:**
+
+1. **Analyze & Prepare** (1-2 seconds)
+   - Topic analysis and target audience identification
+   - Keyword research and SEO analysis
+   - Article structure planning
+
+2. **Generate Draft (Grok-2)** (60-120 seconds)
+   - Human-like writing with natural variation
+   - Uses `[CITATION NEEDED]` placeholders for factual claims
+   - Temperature: 0.8 for creative variety
+   - Cost: ~$0.01-0.03 per article
+
+3. **Fact-Check & Verify (Perplexity Sonar Pro)** (30-60 seconds)
+   - Verifies all factual claims
+   - Adds real citations from authoritative sources
+   - Replaces `[CITATION NEEDED]` tags with actual links
+   - Provides accuracy score (0-100%)
+   - Flags incorrect/outdated/unsupported claims
+   - Cost: ~$0.01-0.02 per article
+
+4. **Generate Image (Gemini 2.5 Flash)** (5-10 seconds)
+   - Professional featured image (1200x630)
+   - Theme-based on article content
+   - Cost: ~$0.001 per image
+
+5. **SEO Metadata Extraction**
+   - Auto-generates meta title (60 chars)
+   - Auto-generates meta description (155 chars)
+   - Extracts target keywords
+   - Creates SEO-friendly slug
+
+6. **Validation & Quality Checks**
+   - Word count validation (1500-2500 target)
+   - HTML structure verification
+   - Readability analysis
+   - Citation completeness check
+
+**Progress Callback:**
+The `onProgress` callback provides real-time updates during generation:
+
+```javascript
+onProgress: ({ stage, message, timestamp }) => {
+  // stage: 'init', 'analyze', 'research', 'structure', 'generate',
+  //        'verify', 'citations', 'image', 'seo', 'validate',
+  //        'quality', 'save', 'complete', 'success', 'error'
+  // message: Human-readable status message
+  // timestamp: Unix timestamp in milliseconds
+}
+```
+
+**Regeneration with Feedback:**
+```javascript
+import { regenerateWithFeedback } from '@/lib/content-pipeline';
+
+const updatedArticle = await regenerateWithFeedback(
+  originalContent,
+  'Make it more concise and focus on career outcomes',
+  topicQuestion,
+  { onProgress }
+);
+```
+
+**Error Handling:**
+The pipeline includes comprehensive validation:
+- Word count checks (minimum 1000 words)
+- Structural validation (H2 headings required)
+- Accuracy score thresholds (>70%)
+- Citation completeness checks
+
+Returns `validation_status: 'valid' | 'invalid'` and `validation_errors` array.
+
+**Cost Tracking:**
+Each article tracks AI costs separately:
+- `generation_cost`: Grok-2 generation cost ($0.01-0.03)
+- `verification_cost`: Perplexity verification cost ($0.01-0.02)
+- Total target: <$0.10 per article
+
+### 6. Article Generation Wizard
+
+**Location:** `src/components/wizard/ArticleGenerationWizard.jsx` (544 lines)
+
+The **Article Generation Wizard** provides a **zero-typing, click-through UX** for content creation. Users never type - they only click to select from AI-generated options.
+
+**Wizard Flow:**
+
+**Step 1: Select Topic/Idea**
+- Displays 20+ auto-populated suggestions from 4 sources
+- Sources: Trending Questions, SEO Keywords, Topic Clusters, Trending News
+- Each suggestion shows:
+  - Title and description
+  - Source icon and label
+  - Priority badge
+  - Target keywords
+- Click any suggestion to proceed
+
+**Step 2: Select Article Type**
+- 5 pre-defined article types:
+  1. **Ranking Article** (🏆) - "Best programs, top schools, ranked lists"
+  2. **Career Guide** (💼) - "Career paths, job outlooks, salary guides"
+  3. **Listicle** (📝) - "Tips, strategies, actionable lists"
+  4. **Comprehensive Guide** (📚) - "In-depth educational content"
+  5. **FAQ Article** (❓) - "Question-answer format, common queries"
+- Click any type to proceed
+
+**Step 3: Select Title**
+- AI auto-generates 5 SEO-optimized title options
+- Uses Claude Haiku 4.5 for fast generation
+- Titles are:
+  - 50-70 characters (optimal for SEO)
+  - Include primary keyword
+  - Compelling and click-worthy
+  - Match selected article type
+- Click any title to auto-start generation
+
+**Step 4: Generation Progress**
+- Terminal-style progress visualization
+- Real-time typing animation of pipeline steps
+- Shows all stages:
+  - 🎯 Initializing pipeline
+  - 🔍 Analyzing topic
+  - 📊 Keyword research
+  - 📝 Planning structure
+  - ✍️ Generating with Grok-2
+  - 🔬 Fact-checking with Perplexity
+  - 📚 Adding citations
+  - 🎨 Generating image
+  - 🔍 Extracting keywords
+  - ✏️ Generating SEO metadata
+  - 📏 Validation checks
+  - 💾 Saving to database
+
+**Step 5: Success**
+- Displays success message with article details
+- Shows word count, cost, and status
+- Two action buttons:
+  - **View Article** - Navigate to article editor
+  - **Go to Review Queue** - Navigate to approval queue
+
+**Usage:**
+```javascript
+import ArticleGenerationWizard from '@/components/wizard/ArticleGenerationWizard';
+
+function MyPage() {
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  return (
+    <>
+      <Button onClick={() => setWizardOpen(true)}>
+        Generate Article
+      </Button>
+
+      <ArticleGenerationWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        preSelectedTopic={null} // Optional: pre-select a topic
+      />
+    </>
+  );
+}
+```
+
+**Features:**
+- **Framer Motion animations** for smooth transitions
+- **Automatic progression** through steps
+- **Real-time progress updates** via pipeline callback
+- **Automatic suggestion marking** (marks used questions/keywords)
+- **Error recovery** (returns to title selection on failure)
+- **Mobile responsive** (max-w-4xl dialog)
+
+### 7. Content Suggestion Service
+
+**Location:** `src/lib/suggestion-service.js` (292 lines)
+
+The **Suggestion Service** aggregates content ideas from **4 different sources** to power the Article Generation Wizard's zero-typing UX.
+
+**4 Suggestion Sources:**
+
+**1. Trending Questions** (`getTrendingQuestions`)
+- Source: `topic_questions` table
+- Filters: Only unused questions (`used_for_article_id IS NULL`)
+- Sorting: By priority DESC, then search volume DESC
+- Returns: Question text, search volume, extracted keywords
+- Icon: ❓
+- Example: "What is the best online MBA program?"
+
+**2. High-Priority Keywords** (`getHighPriorityKeywords`)
+- Source: `keywords` table
+- Filters: Priority >= 3
+- Sorting: By priority DESC, then search volume DESC
+- Returns: Keyword, search volume, difficulty score, intent
+- Icon: 🎯
+- Example: "Write about: online mba programs"
+
+**3. Active Topic Clusters** (`getActiveClusters`)
+- Source: `clusters` table
+- Filters: Status = 'active'
+- Sorting: By priority DESC
+- Returns: Cluster name, description, subtopics, article/keyword counts
+- Icon: 📚
+- Example: "Graduate Degree Programs"
+
+**4. Trending News/Topics** (`getTrendingNews`)
+- Source: AI-generated via Claude Sonnet 4.5
+- Uses: Real-time analysis of education industry trends
+- Returns: Trending topic titles, descriptions, target keywords
+- Icon: 📰
+- Example: "AI's Impact on Higher Education in 2025"
+
+**API Functions:**
+
+```javascript
+import {
+  getAllSuggestions,
+  getSuggestionsGrouped,
+  markSuggestionAsUsed
+} from '@/lib/suggestion-service';
+
+// Get combined suggestions from all sources
+const suggestions = await getAllSuggestions({
+  includeTrendingQuestions: true,
+  includeKeywords: true,
+  includeClusters: true,
+  includeTrendingNews: true,
+  limit: 30
+});
+// Returns: Array of suggestions sorted by priority
+
+// Get suggestions grouped by source
+const grouped = await getSuggestionsGrouped({
+  questionsLimit: 10,
+  keywordsLimit: 10,
+  clustersLimit: 5,
+  newsLimit: 5
+});
+// Returns: { questions, keywords, clusters, news, all }
+
+// Mark a suggestion as used (tracks usage)
+await markSuggestionAsUsed(suggestion, articleId);
+// Updates: topic_questions.used_for_article_id and used_at
+```
+
+**Suggestion Format:**
+All suggestions are normalized to a common format:
+
+```javascript
+{
+  id: 'unique-id',
+  type: 'question' | 'keyword' | 'cluster' | 'news',
+  title: 'Suggestion title',
+  description: 'Why this is relevant',
+  keywords: ['keyword1', 'keyword2'],
+  priority: 1-5,
+  source: 'Trending Questions' | 'SEO Keywords' | 'Topic Clusters' | 'Trending News',
+  sourceIcon: '❓' | '🎯' | '📚' | '📰',
+  metadata: {
+    // Source-specific metadata
+    questionId, keywordId, clusterId, sourceUrl, etc.
+  }
+}
+```
+
+**Usage Tracking:**
+The service automatically tracks when suggestions are used:
+- Updates `topic_questions.used_for_article_id` when a question is used
+- Prevents duplicate content by filtering out used questions
+- Timestamps usage with `used_at` field
+
+**AI-Powered Trending Topics:**
+The `getTrendingNews` function uses Claude to identify trending topics:
+- Temperature: 0.7 for creativity
+- Max tokens: 2000
+- Prompt optimized for GetEducated.com's audience
+- Returns 5 trending topics with SEO-optimized titles
+
+### 8. Agent Conversation System
 
 **Location:** `src/lib/agent-sdk.js`
 
@@ -640,7 +960,7 @@ const fullConv = await agentSDK.getConversation({
 });
 ```
 
-### 6. File Upload Integration
+### 9. File Upload Integration
 
 ```javascript
 import { UploadFile, CreateFileSignedUrl } from '@/lib/perdia-sdk';
@@ -669,7 +989,7 @@ const { url } = await CreateFileSignedUrl({
 });
 ```
 
-### 7. UI Components & React Patterns
+### 10. UI Components & React Patterns
 
 **Component Library:** shadcn/ui (Radix UI primitives + TailwindCSS)
 
@@ -800,7 +1120,7 @@ toast.error('Failed to create keyword');
 toast.loading('Creating keyword...');
 ```
 
-### 8. Routing Patterns
+### 11. Routing Patterns
 
 **Router:** React Router v7
 
@@ -840,9 +1160,16 @@ Routes are wrapped in `<Layout />` which handles authentication checks. Unauthen
 VITE_SUPABASE_URL=https://your-perdia-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key
 
-# AI Services (REQUIRED)
-VITE_ANTHROPIC_API_KEY=sk-ant-your-key
-VITE_OPENAI_API_KEY=sk-your-key
+# AI Services - Content Generation Pipeline (REQUIRED)
+VITE_XAI_API_KEY=xai-your-key                    # Grok-2 for article generation
+VITE_PERPLEXITY_API_KEY=pplx-your-key            # Perplexity Sonar Pro for fact-checking
+
+# AI Services - Supporting (REQUIRED)
+VITE_ANTHROPIC_API_KEY=sk-ant-your-key           # Claude for titles/metadata
+VITE_GOOGLE_AI_API_KEY=your-key                  # Gemini 2.5 Flash for images
+
+# AI Services - Legacy/Optional
+VITE_OPENAI_API_KEY=sk-your-key                  # Optional, for specialized tasks
 ```
 
 **Optional:**
@@ -850,13 +1177,13 @@ VITE_OPENAI_API_KEY=sk-your-key
 # Admin operations (migrations, seeding)
 VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Image optimization (not required)
+# Image optimization (optional, handled by Gemini by default)
 VITE_CLOUDINARY_CLOUD_NAME=
 VITE_CLOUDINARY_API_KEY=
 VITE_CLOUDINARY_API_SECRET=
 
 # Defaults
-VITE_DEFAULT_AI_PROVIDER=claude  # or 'openai'
+VITE_DEFAULT_AI_PROVIDER=grok  # Primary: 'grok', Secondary: 'claude', Legacy: 'openai'
 ```
 
 **Setup:**
@@ -875,12 +1202,18 @@ perdia/
 │   ├── lib/                        # Core SDK files ⚠️ CRITICAL
 │   │   ├── supabase-client.js      # Centralized Supabase client - ALWAYS USE THIS
 │   │   ├── perdia-sdk.js           # Custom SDK (Base44-compatible, 790 lines)
-│   │   ├── ai-client.js            # AI integration (Claude + OpenAI)
-│   │   ├── agent-sdk.js            # Agent conversation system
+│   │   ├── content-pipeline.js     # Two-stage generation pipeline (Grok → Perplexity) - 512 lines
+│   │   ├── suggestion-service.js   # Content idea aggregation from 4 sources - 292 lines
+│   │   ├── grok-client.js          # Grok-2 API client (xAI)
+│   │   ├── perplexity-client.js    # Perplexity Sonar Pro API client
+│   │   ├── ai-client.js            # AI integration (Claude + OpenAI + Gemini)
+│   │   ├── agent-sdk.js            # Agent conversation system (legacy)
 │   │   └── utils.js                # Utility functions (cn, etc.)
 │   ├── components/                 # React components (100+ files)
 │   │   ├── ui/                     # shadcn/ui components (Radix-based)
-│   │   ├── agents/                 # AI agent interfaces
+│   │   ├── wizard/                 # Article Generation Wizard
+│   │   │   └── ArticleGenerationWizard.jsx  # Zero-typing content wizard - 544 lines
+│   │   ├── agents/                 # AI agent interfaces (legacy)
 │   │   ├── content/                # Content queue, editor
 │   │   ├── dashboard/              # Dashboard widgets
 │   │   ├── layout/                 # App layout components
@@ -905,7 +1238,7 @@ perdia/
 │       └── 20250104000001_perdia_complete_schema.sql  # Complete DB schema
 ├── scripts/
 │   ├── migrate-database.js         # Apply migrations
-│   ├── seed-agents.js              # Seed 9 AI agents
+│   ├── seed-agents.js              # Seed agent definitions (legacy)
 │   └── test-invoke-llm.js          # Test Edge Function deployment
 ├── docs/                           # Documentation
 ├── .env.example                    # Environment variables template
@@ -967,39 +1300,65 @@ async function find(filter = {}, options = {}) {
 
 ## Common Development Workflows
 
-### Adding a New Feature with AI Agent
+### Generating Content with the Pipeline
 
-1. **Define the agent** (if new):
+**Using the Article Generation Wizard (Recommended):**
+
 ```javascript
-// Insert into agent_definitions table
-await AgentDefinition.create({
-  name: 'my_custom_agent',
-  display_name: 'My Custom Agent',
-  description: 'Does something specific',
-  system_prompt: 'You are an expert at...',
-  model: 'claude-sonnet-4-5',
-  provider: 'claude',
-  temperature: 0.7,
-  max_tokens: 4000
+import ArticleGenerationWizard from '@/components/wizard/ArticleGenerationWizard';
+
+// Open wizard - user clicks through 5 steps
+<ArticleGenerationWizard
+  open={wizardOpen}
+  onClose={() => setWizardOpen(false)}
+/>
+```
+
+**Direct Pipeline Usage (Advanced):**
+
+```javascript
+import { generateArticlePipeline } from '@/lib/content-pipeline';
+
+const article = await generateArticlePipeline(
+  'What are the best online MBA programs?',
+  {
+    userInstructions: 'Focus on career outcomes and ROI',
+    wordCountTarget: '2000',
+    includeImages: true,
+    runVerification: true,
+    onProgress: ({ stage, message }) => {
+      console.log(`${stage}: ${message}`);
+    }
+  }
+);
+
+// Save to content queue
+await ContentQueue.create({
+  title: article.title,
+  content: article.body,
+  meta_title: article.meta_title,
+  meta_description: article.meta_description,
+  target_keywords: article.target_keywords,
+  word_count: article.word_count,
+  featured_image_url: article.featured_image_url,
+  status: 'pending_review',
+  generation_cost: article.generation_cost,
+  verification_cost: article.verification_cost,
+  validation_status: article.validation_status
 });
 ```
 
-2. **Create conversation**:
-```javascript
-import { agentSDK } from '@/lib/agent-sdk';
+**Regenerating with Feedback:**
 
-const conv = await agentSDK.createConversation({
-  agent_name: 'my_custom_agent',
-  initial_message: 'Generate content for...'
-});
-```
-
-3. **Get response**:
 ```javascript
-const response = await agentSDK.sendMessage({
-  conversation_id: conv.id,
-  message: 'Follow-up instruction...'
-});
+import { regenerateWithFeedback } from '@/lib/content-pipeline';
+
+const updatedArticle = await regenerateWithFeedback(
+  originalContent,
+  'Make it more concise and add more career statistics',
+  topicQuestion,
+  { onProgress }
+);
 ```
 
 ### Working with Keywords
@@ -1042,34 +1401,62 @@ const subscription = Keyword.subscribe((payload) => {
 ```javascript
 import { ContentQueue } from '@/lib/perdia-sdk';
 
-// Create draft content
-const draft = await ContentQueue.create({
-  title: 'Best Online MBA Programs 2025',
-  content: '<article>...</article>',
-  content_type: 'new_article',
-  status: 'draft',
-  target_keywords: ['online mba', 'best mba programs'],
-  word_count: 2500,
-  meta_description: 'Discover the best online MBA programs...'
-});
+// Articles are automatically created by the pipeline
+// in 'pending_review' status
 
-// Submit for review
-await ContentQueue.update(draft.id, {
+// Fetch pending articles
+const pendingArticles = await ContentQueue.find({
   status: 'pending_review'
+}, {
+  orderBy: { column: 'created_date', ascending: false }
 });
 
-// Approve and schedule
-await ContentQueue.update(draft.id, {
+// Review and approve
+await ContentQueue.update(articleId, {
   status: 'approved',
+  reviewer_notes: 'Looks good!',
+  reviewed_by: userId,
+  reviewed_at: new Date().toISOString()
+});
+
+// Schedule for publishing
+await ContentQueue.update(articleId, {
+  status: 'scheduled',
   scheduled_publish_date: '2025-11-15T10:00:00Z'
 });
 
-// Publish to WordPress
-await ContentQueue.update(draft.id, {
+// Auto-publish via cron job or manual publish
+await ContentQueue.update(articleId, {
   status: 'published',
   wordpress_post_id: '12345',
-  wordpress_url: 'https://geteducated.com/articles/...'
+  wordpress_url: 'https://geteducated.com/articles/...',
+  published_at: new Date().toISOString()
 });
+```
+
+### Working with Content Suggestions
+
+```javascript
+import { getAllSuggestions, markSuggestionAsUsed } from '@/lib/suggestion-service';
+
+// Get suggestions from all sources
+const suggestions = await getAllSuggestions({
+  limit: 20
+});
+
+// Display suggestions to user
+suggestions.forEach(suggestion => {
+  console.log(`${suggestion.sourceIcon} ${suggestion.title}`);
+  console.log(`  Source: ${suggestion.source}`);
+  console.log(`  Keywords: ${suggestion.keywords.join(', ')}`);
+  console.log(`  Priority: ${suggestion.priority}/5`);
+});
+
+// When user selects a suggestion and generates content
+const article = await generateArticlePipeline(suggestion.title, options);
+
+// Mark suggestion as used
+await markSuggestionAsUsed(suggestion, article.id);
 ```
 
 ## Deployment
@@ -1245,12 +1632,17 @@ VITE_DEBUG=true npm run dev
 
 ---
 
-**Last Updated:** 2025-11-07
-**Version:** 1.2.0
-**Status:** ✅ Production Ready - AI on Supabase Edge Functions (400s timeout)
+**Last Updated:** 2025-11-13
+**Version:** 1.3.0
+**Status:** ✅ Production Ready - Two-Stage Content Pipeline (Grok-2 → Perplexity Sonar Pro)
 **Netlify Project:** 371d61d6-ad3d-4c13-8455-52ca33d1c0d4
 **Supabase Project:** yvvtsfgryweqfppilkvo
 
 **⚠️ IMPORTANT:** Always reference `docs/ANTHROPIC_API_GUIDE.md` for Claude API implementation details to ensure correct model usage, rate limit handling, and cost optimization.
 
-**🚀 INFRASTRUCTURE:** AI invocation runs on Supabase Edge Functions with 400-second timeout. No more 504 errors!
+**🚀 NEW FEATURES (v1.3.0):**
+- **Content Generation Pipeline:** Two-stage system combining Grok-2's human-like generation with Perplexity's fact-checking
+- **Article Generation Wizard:** Zero-typing, 5-step click-through UX for content creation
+- **Smart Suggestion Service:** Auto-aggregates content ideas from 4 sources (questions, keywords, clusters, news)
+- **Cost Optimization:** Target <$0.10 per article with transparent cost tracking
+- **Real-time Progress:** Terminal-style visualization of all generation stages

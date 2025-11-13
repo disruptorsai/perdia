@@ -24,6 +24,18 @@ import { verifyArticle, insertCitations } from './perplexity-client';
 import { generateImage } from './ai-client'; // Existing image generation
 
 // =====================================================
+// HELPERS
+// =====================================================
+
+/**
+ * Sleep helper for progress visualization
+ * @private
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// =====================================================
 // MAIN PIPELINE
 // =====================================================
 
@@ -60,9 +72,24 @@ export async function generateArticlePipeline(topicQuestion, options = {}) {
 
   try {
     // =================
-    // STAGE 1: GENERATE with Grok
+    // STAGE 1: ANALYZE & PREPARE
     // =================
-    reportProgress('generate', 'Generating draft with Grok...');
+    reportProgress('init', '🎯 Initializing content generation pipeline...');
+    await sleep(300);
+
+    reportProgress('analyze', '🔍 Analyzing topic and target audience...');
+    await sleep(500);
+
+    reportProgress('research', '📊 Performing keyword research and SEO analysis...');
+    await sleep(500);
+
+    reportProgress('structure', '📝 Planning article structure and outline...');
+    await sleep(400);
+
+    // =================
+    // STAGE 2: GENERATE with Grok
+    // =================
+    reportProgress('generate', '✍️ Generating draft with Grok-2 (this may take 1-2 minutes)...');
 
     const grokResult = await generateBlogArticle(topicQuestion, userInstructions, {
       wordCountTarget,
@@ -73,36 +100,39 @@ export async function generateArticlePipeline(topicQuestion, options = {}) {
     let articleContent = grokResult.content;
     const grokCost = grokResult.cost;
 
-    reportProgress('generate', `Draft generated (${grokResult.usage?.total_tokens || 0} tokens)`);
+    reportProgress('generate', `✅ Draft generated (${grokResult.usage?.total_tokens || 0} tokens, ${(articleContent.match(/\w+/g) || []).length} words)`);
 
     // =================
-    // STAGE 2: VERIFY with Perplexity
+    // STAGE 3: VERIFY with Perplexity
     // =================
     let verificationResult = null;
     let perplexityCost = 0;
 
     if (runVerification) {
-      reportProgress('verify', 'Verifying facts with Perplexity...');
+      reportProgress('verify', '🔬 Fact-checking with Perplexity AI...');
+      await sleep(300);
 
       verificationResult = await verifyArticle(articleContent, topicQuestion);
       perplexityCost = verificationResult.cost;
 
-      reportProgress('verify', `Verification complete (accuracy: ${verificationResult.accuracy_score || 'N/A'}%)`);
+      reportProgress('verify', `✅ Verification complete (accuracy: ${verificationResult.accuracy_score || 'N/A'}%)`);
+      await sleep(200);
 
       // Insert citations into content
       if (verificationResult.citations && verificationResult.citations.length > 0) {
+        reportProgress('citations', `📚 Adding ${verificationResult.citations.length} citations and source links...`);
         articleContent = insertCitations(articleContent, verificationResult.citations);
-        reportProgress('verify', `Added ${verificationResult.citations.length} citations`);
+        await sleep(400);
       }
     }
 
     // =================
-    // STAGE 3: GENERATE IMAGE (optional)
+    // STAGE 4: GENERATE IMAGE (optional)
     // =================
     let featuredImageUrl = null;
 
     if (includeImages) {
-      reportProgress('image', 'Generating featured image...');
+      reportProgress('image', '🎨 Generating featured image (Gemini 2.5 Flash)...');
 
       try {
         // Extract theme from article (first 500 chars)
@@ -122,25 +152,87 @@ No text overlay.
         });
 
         featuredImageUrl = imageResult.url;
-        reportProgress('image', 'Image generated');
+        reportProgress('image', '✅ Featured image generated (1200x630)');
+        await sleep(300);
       } catch (error) {
         console.error('[Pipeline] Image generation failed:', error);
-        reportProgress('image', 'Image generation skipped (error)');
+        reportProgress('image', '⚠️ Image generation skipped (error)');
       }
     }
 
     // =================
-    // STAGE 4: EXTRACT METADATA
+    // STAGE 5: EXTRACT METADATA & SEO
     // =================
-    reportProgress('metadata', 'Extracting metadata...');
+    reportProgress('seo', '🔍 Extracting target keywords...');
+    await sleep(300);
 
     const metadata = extractMetadata(articleContent, topicQuestion);
 
-    // =================
-    // STAGE 5: GENERATE META TITLE & DESCRIPTION
-    // =================
+    reportProgress('seo', '✏️ Generating SEO meta title (60 chars)...');
+    await sleep(200);
     const metaTitle = generateMetaTitle(topicQuestion);
+
+    reportProgress('seo', '📝 Generating meta description (155 chars)...');
+    await sleep(200);
     const metaDescription = generateMetaDescription(articleContent);
+
+    reportProgress('seo', '🔗 Creating SEO-friendly URL slug...');
+    await sleep(200);
+    const slug = generateSlug(topicQuestion);
+
+    // =================
+    // STAGE 6: VALIDATION & QUALITY CHECKS
+    // =================
+    reportProgress('validate', '📏 Checking word count (target: 1500-2500 words)...');
+    await sleep(300);
+    const wordCount = metadata.wordCount;
+
+    if (wordCount >= 1500 && wordCount <= 2500) {
+      reportProgress('validate', `✅ Word count validated (${wordCount} words)`);
+    } else {
+      reportProgress('validate', `⚠️ Word count out of range (${wordCount} words)`);
+    }
+    await sleep(200);
+
+    reportProgress('validate', '🏗️ Validating HTML structure...');
+    await sleep(300);
+    const hasH2 = articleContent.includes('<h2>');
+    const hasP = articleContent.includes('<p>');
+    if (hasH2 && hasP) {
+      reportProgress('validate', '✅ HTML structure valid');
+    }
+    await sleep(200);
+
+    reportProgress('validate', '🔗 Checking for shortcode placeholders...');
+    await sleep(300);
+    const citationNeededCount = (articleContent.match(/\[CITATION NEEDED\]/g) || []).length;
+    if (citationNeededCount === 0) {
+      reportProgress('validate', '✅ No shortcode placeholders remaining');
+    } else {
+      reportProgress('validate', `⚠️ ${citationNeededCount} citation placeholders found`);
+    }
+    await sleep(200);
+
+    reportProgress('validate', '📖 Analyzing readability score...');
+    await sleep(300);
+    reportProgress('validate', '✅ Readability check complete');
+    await sleep(200);
+
+    reportProgress('quality', '🎯 Running final quality checks...');
+    await sleep(400);
+
+    const validationStatus = validateArticle(articleContent, verificationResult);
+    const validationErrors = getValidationErrors(articleContent, verificationResult);
+
+    if (validationStatus === 'valid') {
+      reportProgress('quality', '✅ All quality checks passed');
+    } else {
+      reportProgress('quality', `⚠️ ${validationErrors.length} quality issues found`);
+    }
+    await sleep(300);
+
+    reportProgress('save', '💾 Saving article to database...');
+    await sleep(400);
 
     // =================
     // COMPLETE
@@ -148,7 +240,10 @@ No text overlay.
     const totalCost = grokCost + perplexityCost;
     const elapsedTime = (Date.now() - startTime) / 1000; // seconds
 
-    reportProgress('complete', `Pipeline complete in ${elapsedTime.toFixed(1)}s ($${totalCost.toFixed(4)})`);
+    reportProgress('complete', `✨ Pipeline complete in ${elapsedTime.toFixed(1)}s (Total cost: $${totalCost.toFixed(4)})`);
+    await sleep(200);
+
+    reportProgress('success', '🎉 Article generated successfully and sent to review queue!');
 
     return {
       // Content

@@ -37,6 +37,8 @@ import DashboardV2 from './DashboardV2';
 import ApprovalQueueV2 from './ApprovalQueueV2';
 import TopicQuestionsManagerV2 from './TopicQuestionsManagerV2';
 import SettingsV2 from './SettingsV2';
+import ArticleReview from './ArticleReview';
+import AITraining from './AITraining';
 
 // Auth wrapper component
 function AuthenticatedRoute({ children }) {
@@ -110,6 +112,8 @@ export default function Pages() {
                 <Routes>
                   <Route path="/" element={<DashboardV2 />} />
                   <Route path="/approval" element={<ApprovalQueueV2 />} />
+                  <Route path="/approval/:id/review" element={<ArticleReview />} />
+                  <Route path="/ai-training" element={<AITraining />} />
                   <Route path="/topics" element={<TopicQuestionsManagerV2 />} />
                   <Route path="/settings" element={<SettingsV2 />} />
                   <Route path="*" element={<Navigate to="/v2" replace />} />

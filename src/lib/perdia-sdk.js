@@ -522,6 +522,11 @@ export const ShortcodeValidationLog = new BaseEntity('shortcode_validation_logs'
 export const QuoteSource = new BaseEntity('quote_sources');
 export const AIUsageLog = new BaseEntity('ai_usage_logs');
 
+// Article Review & AI Training Entities (Nov 2025)
+export const ArticleRevision = new BaseEntity('article_revisions');
+export const TrainingData = new BaseEntity('training_data');
+export const SystemSetting = new BaseEntity('system_settings');
+
 // Legacy Entities (NOT USED - kept for compatibility)
 export const Client = new BaseEntity('clients'); // Not implemented
 export const Project = new BaseEntity('projects'); // Not implemented
