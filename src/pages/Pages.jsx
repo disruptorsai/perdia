@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
+import AppLayoutV2 from '@/components/layout/AppLayoutV2';
 import { getCurrentUser, supabase } from '@/lib/supabase-client';
 
 // Import all page components
@@ -30,6 +31,12 @@ import Profile from './Profile';
 import TopicQuestionsManager from './TopicQuestionsManager';
 import PipelineConfiguration from './PipelineConfiguration';
 import Settings from './Settings';
+
+// Perdia V2 - Redesigned Pages (Simplified)
+import DashboardV2 from './DashboardV2';
+import ApprovalQueueV2 from './ApprovalQueueV2';
+import TopicQuestionsManagerV2 from './TopicQuestionsManagerV2';
+import SettingsV2 from './SettingsV2';
 
 // Auth wrapper component
 function AuthenticatedRoute({ children }) {
@@ -94,9 +101,27 @@ export default function Pages() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Protected routes */}
+        {/* Protected routes - V2 (Default, Simplified) */}
         <Route
-          path="/*"
+          path="/v2/*"
+          element={
+            <AuthenticatedRoute>
+              <AppLayoutV2>
+                <Routes>
+                  <Route path="/" element={<DashboardV2 />} />
+                  <Route path="/approval" element={<ApprovalQueueV2 />} />
+                  <Route path="/topics" element={<TopicQuestionsManagerV2 />} />
+                  <Route path="/settings" element={<SettingsV2 />} />
+                  <Route path="*" element={<Navigate to="/v2" replace />} />
+                </Routes>
+              </AppLayoutV2>
+            </AuthenticatedRoute>
+          }
+        />
+
+        {/* Protected routes - V1 (Legacy, Full Feature Set) */}
+        <Route
+          path="/v1/*"
           element={
             <AuthenticatedRoute>
               <AppLayout>
@@ -116,16 +141,34 @@ export default function Pages() {
                   <Route path="/calendar" element={<ContentCalendar />} />
                   <Route path="/chat" element={<TeamChat />} />
                   <Route path="/profile" element={<Profile />} />
-
-                  {/* Perdia V2 - New Routes */}
                   <Route path="/topic-questions" element={<TopicQuestionsManager />} />
                   <Route path="/pipeline-config" element={<PipelineConfiguration />} />
                   <Route path="/settings" element={<Settings />} />
-
-                  {/* Catch-all redirect to dashboard */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<Navigate to="/v1" replace />} />
                 </Routes>
               </AppLayout>
+            </AuthenticatedRoute>
+          }
+        />
+
+        {/* Default route - Redirect to V2 (Simplified) */}
+        <Route
+          path="/"
+          element={
+            <AuthenticatedRoute>
+              <Navigate to="/v2" replace />
+            </AuthenticatedRoute>
+          }
+        />
+
+        {/* Profile route (accessible from both V1 and V2) */}
+        <Route
+          path="/profile"
+          element={
+            <AuthenticatedRoute>
+              <AppLayoutV2>
+                <Profile />
+              </AppLayoutV2>
             </AuthenticatedRoute>
           }
         />

@@ -42,6 +42,18 @@ class BaseEntity {
   static TABLES_WITHOUT_USER_ID = [
     'agent_messages',      // Scoped by conversation_id
     'chat_messages',       // Scoped by channel_id
+    'topic_questions',     // Shared in MVP
+    'agent_definitions',   // Shared system-wide
+  ];
+
+  // Tables using created_at instead of created_date
+  static TABLES_WITH_CREATED_AT = [
+    'articles',
+    'topic_questions',
+    'feedback',
+    'quotes',
+    'automation_schedule',
+    'integrations',
   ];
 
   constructor(tableName, schema = {}) {
@@ -120,8 +132,11 @@ class BaseEntity {
         const { column, ascending = false } = options.orderBy;
         query = query.order(column, { ascending });
       } else {
-        // Default: order by created_date DESC
-        query = query.order('created_date', { ascending: false });
+        // Default: order by created_at or created_date DESC
+        const createdColumn = BaseEntity.TABLES_WITH_CREATED_AT.includes(this.tableName)
+          ? 'created_at'
+          : 'created_date';
+        query = query.order(createdColumn, { ascending: false });
       }
 
       // Apply pagination
@@ -492,6 +507,15 @@ export const AgentMessage = new BaseEntity('agent_messages');
 export const PipelineConfiguration = new BaseEntity('pipeline_configurations');
 export const TopicQuestion = new BaseEntity('topic_questions');
 export const ScrapedQuote = new BaseEntity('scraped_quotes');
+
+// =====================================================
+// PERDIA V2 ENTITIES (New simplified architecture)
+// =====================================================
+export const Article = new BaseEntity('articles');
+export const Feedback = new BaseEntity('feedback');
+export const Quote = new BaseEntity('quotes');
+export const AutomationSchedule = new BaseEntity('automation_schedule');
+export const Integration = new BaseEntity('integrations');
 
 // Sprint 1: Production-Ready Entities
 export const ShortcodeValidationLog = new BaseEntity('shortcode_validation_logs');

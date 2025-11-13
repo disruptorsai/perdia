@@ -19,6 +19,7 @@
     "type-check": "tsc --noEmit",
     "test:browser": "node scripts/browser-test.js",
     "test:deployment": "node scripts/browser-test.js",
+    "test:v2": "node scripts/test-perdia-v2.js",
     "browser-test-setup": "node scripts/global-browser-testing-setup.js"
   },
   "dependencies": {
