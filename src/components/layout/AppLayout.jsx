@@ -25,8 +25,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarHeader,
-  SidebarFooter,
-  Badge
+  SidebarFooter
 } from '@/components/ui';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import HelpMenu from '@/components/onboarding/HelpMenu';
@@ -34,42 +33,42 @@ import HelpMenu from '@/components/onboarding/HelpMenu';
 const navigationItems = [
   {
     title: 'Dashboard',
-    url: '/',
+    url: '/v1',
     icon: LayoutDashboard,
   },
   {
     title: 'Content Library',
-    url: '/content',
+    url: '/v1/content',
     icon: FileText,
   },
   {
     title: 'Review Queue',
-    url: '/approvals',
+    url: '/v1/approvals',
     icon: ListChecks,
   },
   {
     title: 'Keywords & Clusters',
-    url: '/keywords',
+    url: '/v1/keywords',
     icon: Tag,
   },
   {
     title: 'Analytics',
-    url: '/performance',
+    url: '/v1/performance',
     icon: BarChart3,
   },
   {
     title: 'AI Training',
-    url: '/ai-training',
+    url: '/v1/ai-training',
     icon: Brain,
   },
   {
     title: 'Integrations',
-    url: '/wordpress',
+    url: '/v1/wordpress',
     icon: Plug,
   },
   {
     title: 'Settings',
-    url: '/settings',
+    url: '/v1/settings',
     icon: Settings,
   },
 ];
@@ -77,18 +76,18 @@ const navigationItems = [
 const aiTools = [
   {
     title: 'Generate Article',
-    url: '/ai-agents',
+    url: '/v1/ai-agents',
     icon: Sparkles,
     featured: true
   },
   {
     title: 'Topic Discovery',
-    url: '/topic-discovery',
+    url: '/v1/topic-discovery',
     icon: TrendingUp,
   },
   {
     title: 'Site Analysis',
-    url: '/site-analysis',
+    url: '/v1/site-analysis',
     icon: Microscope,
   },
 ];
