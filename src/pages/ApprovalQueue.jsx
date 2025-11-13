@@ -1,6 +1,11 @@
 /**
- * PERDIA V2: APPROVAL QUEUE
- * =========================
+ * PERDIA V1: APPROVAL QUEUE (Full Features)
+ * ==========================================
+ *
+ * ⚠️ ARCHITECTURE NOTE: This is the V1 version used at route /v1/approvals
+ * - Uses ContentQueue entity (content_queue table) ✓ ACTIVE DATA SOURCE
+ * - For V2 version, see ApprovalQueueV2.jsx (uses Article entity)
+ * - CONFLICT: V1 and V2 use different tables - data won't sync!
  *
  * PRIMARY SCREEN - Users spend 80% of time here
  *
@@ -13,6 +18,7 @@
  * - Bulk operations
  *
  * Created: 2025-11-12
+ * Updated: 2025-11-13 (added architecture notes)
  */
 
 import React, { useState, useEffect } from 'react';

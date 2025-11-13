@@ -1,6 +1,12 @@
 /**
- * PERDIA V2: APPROVAL QUEUE (PRIMARY SCREEN)
- * ===========================================
+ * PERDIA V2: APPROVAL QUEUE (Simplified Interface)
+ * =================================================
+ *
+ * ⚠️ ARCHITECTURE WARNING: This is the V2 version used at route /v2/approval
+ * - Uses Article entity (articles table) ⚠️ MAY BE EMPTY!
+ * - For V1 version, see ApprovalQueue.jsx (uses ContentQueue entity)
+ * - CRITICAL ISSUE: Articles created in V1 won't appear here! Different table!
+ * - RECOMMENDATION: Verify data exists in 'articles' table before using this page
  *
  * Simplified, focused approval workflow for blog articles
  *
@@ -11,9 +17,10 @@
  * - Search and filters
  * - Validation status badges
  *
- * This is where editors spend 80% of their time.
+ * This is where editors spend 80% of their time (when using V2 interface).
  *
  * Created: 2025-11-12 (Perdia V2)
+ * Updated: 2025-11-13 (added architecture warnings)
  */
 
 import React, { useState, useEffect } from 'react';

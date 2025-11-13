@@ -94,20 +94,89 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`docs/production-ready-plan/IMPLEMENTATION_GUIDE.md`** - Step-by-step developer guide (4-week sprints)
 - **`docs/production-ready-plan/TECHNICAL_SPECS.md`** - WordPress integration, shortcodes, quotes, workflow, cost monitoring, DB access, testing
 
+### ⚠️ KNOWN ARCHITECTURAL ISSUES (As of Nov 2025)
+
+**CRITICAL - Immediate Attention Required:**
+
+1. **V1/V2 Dual Architecture Creates Maintenance Burden**
+   - V1 (18+ pages, full features) vs V2 (4 pages, simplified)
+   - ~1500 lines of duplicate code (Dashboard, ApprovalQueue, Settings, etc.)
+   - No code sharing between versions
+   - **Impact:** Double maintenance effort, inconsistent UX
+   - **Location:** `src/pages/*V2.jsx` vs `src/pages/*.jsx`
+
+2. **ContentQueue vs Article Table Conflict**
+   - V1 uses `content_queue` table (tested, working, has data)
+   - V2 uses `articles` table (new, may be empty)
+   - **Impact:** V1 shows articles, V2 may show empty queue
+   - **Location:** `ApprovalQueue.jsx` vs `ApprovalQueueV2.jsx`
+   - **Recommended Fix:** Standardize on `content_queue` table for all interfaces
+
+3. **Default Route Contradiction**
+   - Default route `/` → `/v1` (full features interface)
+   - Documentation claims V2 is "primary/simplified" interface
+   - **Impact:** User confusion, onboarding difficulty
+   - **Location:** `src/pages/Pages.jsx` line 170
+
+4. **30+ Unused Components (Dead Code)**
+   - 20+ EOS components never imported or used
+   - 10+ Base44 legacy entities exported but unused
+   - **Impact:** Developer confusion, larger bundle size (~5000 lines)
+   - **Location:** `src/components/eos/*`, unused SDK entities
+
+**HIGH PRIORITY - Affects Production:**
+
+5. **WordPress Publishing Not Implemented**
+   - Code has `TODO: Implement WordPress REST API publishing`
+   - **Impact:** Cannot publish to GetEducated.com automatically
+   - **Location:** `src/lib/content-workflow.js` line 234
+
+6. **SLA Auto-Publish Timer Only (Not Fully Implemented)**
+   - Shows countdown but doesn't trigger auto-publish
+   - **Impact:** Articles stay in queue past 5-day SLA
+   - **Location:** `src/components/layout/AppLayoutV2.jsx`
+
+7. **Shortcode Transformation Not Integrated**
+   - Transformation logic exists but not in workflow
+   - **Impact:** Articles published without GetEducated shortcodes
+   - **Location:** Needs integration in `content-pipeline.js`
+
+**MEDIUM PRIORITY - Code Quality:**
+
+8. **Hardcoded Stats in V2 Layout**
+   - Shows "5 pending, 2 expiring" regardless of actual data
+   - **Impact:** Misleading dashboard metrics
+   - **Location:** `src/components/layout/AppLayoutV2.jsx` lines 45-50
+
+9. **Documentation Debt**
+   - 64+ markdown files with contradictory information
+   - Multiple "final" status reports
+   - **Impact:** Developer confusion, onboarding difficulty
+   - **Location:** `docs/*.md`
+
+**RECOMMENDATION:** Implement Hybrid Consolidation Strategy (see audit report) to resolve V1/V2 conflict and eliminate dead code before production deployment.
+
+---
+
 ### 🔴 MANDATORY Client Requirements (Validated via Transcript):
 
 1. **Shortcodes** - All links MUST use GetEducated.com shortcodes (monetization tracking)
    - Internal: `[ge_internal_link url="..."]text[/ge_internal_link]`
    - Affiliate: `[ge_affiliate_link url="..."]text[/ge_affiliate_link]`
    - External: `[ge_external_link url="..."]text[/ge_external_link]`
+   - **STATUS:** ⚠️ Logic exists but not integrated into workflow
 
 2. **5-Day SLA Auto-Publish** - Articles auto-publish if not reviewed within 5 days (validation must pass)
+   - **STATUS:** ⚠️ Timer implemented, auto-publish action missing
 
 3. **Real Quote Sourcing** - Scrape Reddit, Twitter/X, GetEducated forums (60%+ real quotes, not fictional)
+   - **STATUS:** ❌ Not implemented (0%)
 
 4. **WordPress Database Access** - Direct MySQL connection for complex queries (in addition to REST API)
+   - **STATUS:** ⚠️ REST API only (75% complete)
 
 5. **Cost Monitoring** - Track AI spend per article (target: <$10/article)
+   - **STATUS:** ❌ Not implemented (0%)
 
 **See `docs/production-ready-plan/` folder for all implementation documentation:**
 - **Complete requirements:** `PERDIA_PRD_CORRECTED.md`
@@ -441,15 +510,26 @@ const subscription = Keyword.subscribe((payload) => {
 });
 ```
 
-**16 Active Entities:**
-- `Keyword` - Keyword research/tracking
-- `ContentQueue` - Content workflow
+**SDK Entities (31 Total Exported):**
+
+**PRIMARY ENTITIES (Active in V1 - Used in Production):**
+- `Keyword` - Keyword research/tracking (content_queue table - ACTIVE)
+- `ContentQueue` - Content workflow **[V1 PRIMARY DATA SOURCE]**
 - `PerformanceMetric` - GSC data
 - `WordPressConnection` - WordPress sites
 - `AutomationSettings` - User preferences
+- `TopicQuestion` - Content idea suggestions
+- `Cluster` - Topic grouping for content planning
+
+**V2 ENTITIES (New Nov 2025 - May Be Empty):**
+- `Article` - Article storage **[V2 DATA SOURCE - may conflict with ContentQueue]**
+- `Feedback` - Article feedback/comments
+- `ArticleRevision` - Editorial comments and revision history
+
+**SECONDARY ENTITIES (Defined but Limited Usage):**
 - `PageOptimization` - Page improvements
-- `BlogPost` - Blog content
-- `SocialPost` - Social media
+- `BlogPost` - Blog content (legacy)
+- `SocialPost` - Social media (legacy)
 - `KnowledgeBaseDocument` - AI training docs
 - `AgentFeedback` - AI response feedback
 - `FileDocument` - File storage
@@ -458,6 +538,14 @@ const subscription = Keyword.subscribe((payload) => {
 - `AgentDefinition` - AI agent configs
 - `AgentConversation` - AI conversations
 - `AgentMessage` - Conversation messages
+
+**UNUSED BASE44 LEGACY ENTITIES (10 Total - Not Used):**
+- `EOSCompany`, `EOSRock`, `EOSIssue`, `EOSPersonAssessment`, `EOSProcess`
+- `EOSProcessImprovement`, `EOSScorecardMetric`, `EOSAccountabilitySeat`
+- `Client`, `Project`, `Task`, `TimeEntry`, `User`
+
+**CRITICAL ARCHITECTURE NOTE:**
+⚠️ **ContentQueue vs Article Conflict**: V1 uses `content_queue` table, V2 uses `articles` table. This creates data isolation - content created in V1 won't appear in V2 and vice versa. **Recommendation:** Standardize on `ContentQueue` (content_queue table) for unified data access.
 
 **All entities automatically:**
 - Enforce authentication via RLS
@@ -1120,25 +1208,73 @@ toast.error('Failed to create keyword');
 toast.loading('Creating keyword...');
 ```
 
-### 11. Routing Patterns
+### 11. Routing Patterns & Architecture
 
 **Router:** React Router v7
 
 **Configuration:** `src/pages/Pages.jsx`
 
-**Route Structure:**
+**IMPORTANT: V1/V2 Dual Architecture**
+
+The platform currently has TWO interfaces with different design philosophies:
+
+**V1 Interface (Full Features - Currently Default):**
+- **Route:** `/v1/*`
+- **Layout:** `AppLayout.jsx` (V3-style navigation with sidebar sections)
+- **Pages:** 18+ full-featured pages
+- **Data:** Uses `content_queue` table via `ContentQueue` entity
+- **Status:** Complete implementation, complex UI
+- **Navigation:**
+  - **Navigation Section:** Dashboard, Content Library, Review Queue, Keywords & Clusters, Analytics, AI Training, Integrations, Settings
+  - **AI Tools Section:** Generate Article (featured), Topic Discovery, Site Analysis
+
+**V2 Interface (Simplified):**
+- **Route:** `/v2/*`
+- **Layout:** `AppLayoutV2.jsx` (minimal sidebar)
+- **Pages:** 4 simplified pages (Dashboard, Approval Queue, Topics, Settings)
+- **Data:** Uses `articles` table via `Article` entity (may be empty if content is in `content_queue`)
+- **Status:** Simplified UI, limited features
+- **Note:** May show empty queue due to entity storage conflict
+
+**Default Route:**
 ```javascript
-// Protected routes require authentication
-<Route element={<Layout />}>
-  <Route path="/dashboard" element={<Dashboard />} />
+/ → Navigate to /v1 (currently)
+```
+
+**V1 Route Structure:**
+```javascript
+<Route path="/v1/*">
+  <Route path="/" element={<Dashboard />} />
+  <Route path="/ai-agents" element={<AIAgents />} />
   <Route path="/keywords" element={<KeywordManager />} />
   <Route path="/content" element={<ContentLibrary />} />
-  <Route path="/agents" element={<AIAgents />} />
-  {/* ... */}
+  <Route path="/approvals" element={<ApprovalQueue />} />
+  <Route path="/performance" element={<PerformanceDashboard />} />
+  <Route path="/ai-training" element={<AITraining />} />
+  <Route path="/wordpress" element={<WordPressConnection />} />
+  <Route path="/settings" element={<Settings />} />
+  <Route path="/topic-discovery" element={<TopicDiscovery />} />
+  <Route path="/site-analysis" element={<SiteAnalysis />} />
+  {/* Additional routes... */}
 </Route>
+```
 
-// Public routes
+**V2 Route Structure:**
+```javascript
+<Route path="/v2/*">
+  <Route path="/" element={<DashboardV2 />} />
+  <Route path="/approval" element={<ApprovalQueueV2 />} />
+  <Route path="/approval/:id/review" element={<ArticleReview />} />
+  <Route path="/ai-training" element={<AITraining />} />
+  <Route path="/topics" element={<TopicQuestionsManagerV2 />} />
+  <Route path="/settings" element={<SettingsV2 />} />
+</Route>
+```
+
+**Public Routes:**
+```javascript
 <Route path="/login" element={<Login />} />
+<Route path="/signup" element={<Signup />} />
 ```
 
 **Navigation:**
@@ -1146,11 +1282,12 @@ toast.loading('Creating keyword...');
 import { useNavigate } from 'react-router-dom';
 
 const navigate = useNavigate();
-navigate('/keywords');
+navigate('/v1/keywords'); // Navigate to V1 keyword manager
+navigate('/v2/approval'); // Navigate to V2 approval queue
 ```
 
 **Route Protection:**
-Routes are wrapped in `<Layout />` which handles authentication checks. Unauthenticated users are redirected to login.
+Routes are wrapped in `<AuthenticatedRoute>` which handles authentication checks. Unauthenticated users are redirected to login with preserved destination.
 
 ## Environment Variables
 
