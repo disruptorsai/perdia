@@ -152,6 +152,58 @@ This project includes a **specialized Supabase Database Agent** that automatical
 
 The agent will automatically provide complete migrations, SDK updates, and documentation.
 
+## Perdia Infrastructure Agent
+
+This project includes a **specialized Infrastructure Management Agent** that automatically manages all MCP server operations for deployment, database, image optimization, SEO research, and testing.
+
+**Perdia Infrastructure Agent** - Automatically activates when:
+- Deployment keywords detected (deploy, build, production, environment variables)
+- Database operations needed (via Supabase MCP)
+- Image operations mentioned (optimize, cloudinary, media)
+- SEO research requested (keyword research, search volume, SERP)
+- Testing & debugging needed (playwright, screenshot, browser automation)
+- Infrastructure errors encountered (build failures, deployment errors)
+
+**What it knows:**
+- Complete MCP server configuration (5 servers)
+- Supabase project ref and credentials
+- Netlify site ID and deployment settings
+- Cloudinary media optimization
+- DataForSEO keyword research APIs
+- Playwright browser automation
+
+**What it does:**
+- Manages deployments via Netlify MCP
+- Executes database queries via Supabase MCP
+- Optimizes images via Cloudinary MCP
+- Researches keywords via DataForSEO MCP
+- Tests deployed sites via Playwright MCP
+- Monitors infrastructure health
+- Handles error debugging
+
+**MCP Servers Managed:**
+1. `supabase` - Database operations, schema inspection, SQL queries
+2. `netlify` - Deployment management, environment variables, builds
+3. `cloudinary` - Image optimization, media asset management
+4. `dataforseo` - Keyword research, SEO metrics, SERP data
+5. `playwright` - Browser automation, testing, screenshots
+
+**Documentation:**
+- Full Spec: `.claude/agents/perdia-infrastructure-agent.md`
+- Setup Guide: `.claude/docs/MCP_SETUP_GUIDE.md`
+
+**Example Usage:**
+```
+"Deploy to production"
+"Check database schema"
+"Optimize blog images"
+"Research keyword search volume"
+"Test the deployed site"
+"Debug production issue"
+```
+
+The agent will automatically use the appropriate MCP servers to complete infrastructure tasks.
+
 ## MCP Server Configuration
 
 The Perdia project has **project-level MCP servers** configured for seamless integration with external services. These are configured in `.claude/mcp.json` and automatically available to Claude Code.
