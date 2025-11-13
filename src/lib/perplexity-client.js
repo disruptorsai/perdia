@@ -226,32 +226,36 @@ Return ONLY the JSON object, no additional text.
  *
  * @param {string} topic - Topic to search (e.g., "higher education", "college degrees")
  * @param {number} limit - Number of questions to return
- * @returns {Promise<Array>} List of questions with keywords and search volume
+ * @returns {Promise<Array>} List of questions with keywords, relevance, and priority
  */
 export async function findTopQuestions(topic, limit = 50) {
   const prompt = `
-What are the top ${limit} questions people are asking about "${topic}" right now?
+Based on current online discussions, forums, and educational content about "${topic}", suggest ${limit} questions that would make excellent blog article topics.
 
-For each question, provide:
-- The question text
-- Related keywords
-- Estimated search volume (high/medium/low)
-- Priority (1-5, where 5 is highest)
+For each question:
+- Make it specific and actionable
+- Include related keywords naturally
+- Assess relevance to searchers (high/medium/low)
+- Rate content priority (1-5, where 5 = most important)
 
-OUTPUT FORMAT (JSON):
+Focus on questions that:
+- Address real student/learner concerns
+- Have educational value
+- Would benefit from comprehensive answers
+
+Return your response as a JSON object with this EXACT structure:
 {
   "questions": [
     {
       "question": "What is the difference between college and university?",
       "keywords": ["college", "university", "higher education"],
-      "search_volume": "high",
+      "relevance": "high",
       "priority": 5
     }
   ]
 }
 
-Return ONLY the JSON object, no additional text.
-Focus on questions that would make good blog article topics.
+IMPORTANT: Return ONLY the JSON object wrapped in a code block. Do not include explanations before or after.
   `.trim();
 
   const response = await invokePerplexity({
@@ -264,10 +268,34 @@ Focus on questions that would make good blog article topics.
   // Try to parse JSON response
   let questionsData;
   try {
+    // First try: Direct JSON parse
     questionsData = JSON.parse(response.content);
     return questionsData.questions || [];
   } catch (error) {
+    // Second try: Extract JSON from markdown code block
+    const jsonMatch = response.content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+    if (jsonMatch) {
+      try {
+        questionsData = JSON.parse(jsonMatch[1]);
+        return questionsData.questions || [];
+      } catch (e) {
+        console.warn('[Perplexity] Failed to parse JSON from code block:', e.message);
+      }
+    }
+
+    // Third try: Extract JSON object pattern
+    const objMatch = response.content.match(/\{[\s\S]*"questions"[\s\S]*\}/);
+    if (objMatch) {
+      try {
+        questionsData = JSON.parse(objMatch[0]);
+        return questionsData.questions || [];
+      } catch (e) {
+        console.warn('[Perplexity] Failed to parse extracted JSON object:', e.message);
+      }
+    }
+
     console.warn('[Perplexity] Failed to parse questions JSON');
+    console.log('[Perplexity] Response content:', response.content);
     return [];
   }
 }
