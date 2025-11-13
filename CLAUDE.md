@@ -369,7 +369,9 @@ ReadMcpResourceTool({ server: "supabase", uri: "supabase://storage-buckets" })
 
 **Documentation:**
 - MCP Configuration: `.claude/mcp.json`
-- Database Agent MCP Usage: `.claude/docs/agents/perdia-supabase-database-agent.md`
+- MCP Setup Guide: `.claude/docs/MCP_SETUP_GUIDE.md` ⭐ **How to ensure MCP servers always work**
+- Infrastructure Agent: `.claude/agents/perdia-infrastructure-agent.md`
+- Database Agent: `.claude/agents/perdia-supabase-database-agent.md`
 - Supabase Quick Reference: `docs/SUPABASE_AGENT_QUICK_REFERENCE.md`
 
 ## Essential Commands

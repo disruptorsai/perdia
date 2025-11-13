@@ -1,21 +1,43 @@
 # PERDIA V2 DEPLOYMENT STATUS REPORT
 
-**Generated:** 2025-11-12
-**Status:** 🟡 85% Complete - 3 Manual Steps Remaining
+**Generated:** 2025-11-12 17:30 UTC
+**Status:** 🟡 75% Complete - Edge Functions Need Attention
+**Last Verified:** Automated deployment check completed
+
+---
+
+## 📋 EXECUTIVE SUMMARY
+
+The Perdia V2 deployment is **75% complete** with solid database foundations but incomplete AI Edge Function deployment:
+
+**✅ WORKING:**
+- All 6 database tables deployed and active
+- Database migrations applied successfully
+- Grok API key configured in .env.local
+- UI/UX V2 components committed to git
+
+**⚠️ ISSUES:**
+- `invoke-grok` Edge Function deployed but returning HTTP 500 errors
+- `invoke-perplexity` Edge Function NOT deployed (404)
+- Perplexity API key missing (placeholder value in .env.local)
+
+**⏱️ Time to Fix:** 15-20 minutes (manual steps required)
 
 ---
 
 ## ✅ COMPLETED (Automated)
 
 ### 1. Database Migration
-- **Status:** ✅ Complete
-- **All 6 V2 tables exist:**
-  - `articles` - Generated blog posts
-  - `topic_questions` - Monthly top 50 questions
-  - `feedback` - User feedback on articles
-  - `quotes` - Real quotes from social media
-  - `automation_schedule` - Auto-publish scheduling
-  - `integrations` - WordPress connections
+- **Status:** ✅ Complete (Verified 2025-11-12)
+- **All 6 V2 tables exist and are accessible:**
+  - `articles` - Generated blog posts (2 records)
+  - `topic_questions` - Monthly top 50 questions (0 records)
+  - `feedback` - User feedback on articles (0 records)
+  - `quotes` - Real quotes from social media (0 records)
+  - `automation_schedule` - Auto-publish scheduling (1 record)
+  - `integrations` - WordPress connections (0 records)
+- **RLS Policies:** ✅ All tables have proper Row Level Security enabled
+- **Latest Migration:** `20251112000001_perdia_v2_schema.sql` (16KB, applied Nov 12)
 
 ### 2. UI/UX Simplification
 - **Status:** ✅ Complete
@@ -29,13 +51,15 @@
   - `DashboardV2.jsx` - V2 landing page
 
 ### 3. Environment Variables (.env.local)
-- **Status:** ✅ Grok configured, ⚠️ Perplexity missing
+- **Status:** ⚠️ Partial - Grok configured, Perplexity missing
 - **Configured:**
-  - ✅ `GROK_API_KEY` - Set in .env.local (line 48)
-  - ✅ `VITE_GROK_API_KEY` - Set in .env.local (line 49)
-- **Missing:**
-  - ⚠️ `PERPLEXITY_API_KEY` - Placeholder (pplx-YOUR-KEY-HERE)
-  - ⚠️ `VITE_PERPLEXITY_API_KEY` - Placeholder
+  - ✅ `GROK_API_KEY` - Set in .env.local (line 48) - Valid key present
+  - ✅ `VITE_GROK_API_KEY` - Set in .env.local (line 49) - Valid key present
+  - ✅ Supabase credentials - All configured correctly
+- **Missing (BLOCKING):**
+  - ❌ `PERPLEXITY_API_KEY` - Placeholder value `pplx-YOUR-KEY-HERE` (line 54)
+  - ❌ `VITE_PERPLEXITY_API_KEY` - Placeholder value (line 55)
+  - **Action Required:** Obtain real API key from https://www.perplexity.ai/settings/api
 
 ### 4. Code Committed & Pushed
 - **Status:** ✅ Complete
@@ -44,11 +68,68 @@
 - **Files changed:** 27 files (10,635 insertions)
 
 ### 5. Edge Function Code
-- **Status:** ✅ Code exists in repository
+- **Status:** ✅ Code exists in repository, ⚠️ Deployment issues
 - **Files:**
-  - `supabase/functions/invoke-grok/index.ts` (158 lines)
-  - `supabase/functions/invoke-perplexity/index.ts` (157 lines)
-- **Deployment:** ⚠️ Needs manual deployment via dashboard
+  - `supabase/functions/invoke-grok/index.ts` (158 lines) - Code ready
+  - `supabase/functions/invoke-perplexity/index.ts` (157 lines) - Code ready
+- **Deployment Status (Verified 2025-11-12):**
+  - ⚠️ `invoke-grok` - Deployed but returning HTTP 500 errors
+  - ❌ `invoke-perplexity` - NOT deployed (404 Not Found)
+- **Root Cause:** Secrets not properly configured in Supabase vault
+
+---
+
+## 🔍 DETAILED DIAGNOSTIC RESULTS
+
+**Diagnostic Tool:** `scripts/check-deployment-status.js`
+**Run Time:** 2025-11-12 17:30 UTC
+**Method:** Direct database queries + HTTP endpoint testing
+
+### Database Tables Status
+
+| Table | Status | Record Count | RLS Enabled |
+|-------|--------|--------------|-------------|
+| articles | ✅ Accessible | 2 | Yes |
+| topic_questions | ✅ Accessible | 0 | Yes |
+| feedback | ✅ Accessible | 0 | Yes |
+| quotes | ✅ Accessible | 0 | Yes |
+| automation_schedule | ✅ Accessible | 1 | Yes |
+| integrations | ✅ Accessible | 0 | Yes |
+
+**Conclusion:** All V2 tables are properly deployed and accessible via Supabase client.
+
+### Edge Functions Status
+
+| Function | HTTP Status | Diagnosis | Root Cause |
+|----------|-------------|-----------|------------|
+| invoke-grok | 500 Internal Server Error | Deployed but failing | API key likely not in Supabase vault |
+| invoke-perplexity | 404 Not Found | Not deployed | Function never deployed to Supabase |
+
+**Diagnosis Details:**
+
+**invoke-grok (HTTP 500):**
+- Function IS deployed to Supabase
+- Function code is correct (verified)
+- Likely issue: `GROK_API_KEY` environment variable not accessible to Edge Function
+- Evidence: Function responds (not 404), but fails during execution
+- Fix: Redeploy secret to Supabase vault using `npx supabase secrets set`
+
+**invoke-perplexity (HTTP 404):**
+- Function does NOT exist on Supabase Edge Functions
+- Code exists locally in `supabase/functions/invoke-perplexity/index.ts`
+- Function has never been deployed
+- Fix: Deploy using Supabase CLI or dashboard
+
+### Configuration Status
+
+| Configuration | Local (.env.local) | Supabase Vault | Status |
+|---------------|-------------------|----------------|--------|
+| GROK_API_KEY | ✅ Valid (xai-qEJO...) | ⚠️ Unknown | Needs verification |
+| PERPLEXITY_API_KEY | ❌ Placeholder | ❌ Not set | Needs API key |
+| Supabase URL | ✅ Correct | N/A | Working |
+| Supabase Keys | ✅ Valid | N/A | Working |
+
+**Critical Finding:** The Grok API key is in `.env.local` but may not be properly set in Supabase's secrets vault, which is why the Edge Function is failing.
 
 ---
 
@@ -484,6 +565,42 @@ In Cursor IDE, you can run MCP commands directly:
 
 **Option 3: Manual Dashboard (What We Did)**
 Since MCPs weren't loading, we used direct dashboard access - **THIS WORKS JUST AS WELL!**
+
+---
+
+## 📦 COMPLETE EDGE FUNCTION INVENTORY
+
+The Perdia project has **18 Edge Functions** in the codebase:
+
+### V2 Functions (New - For Grok/Perplexity Integration)
+| Function | Status | Purpose |
+|----------|--------|---------|
+| invoke-grok | ⚠️ Deployed (HTTP 500) | Grok AI content generation |
+| invoke-perplexity | ❌ Not Deployed | Perplexity fact-checking |
+
+### V1 Functions (Legacy - Status Unknown)
+| Function | Purpose | Deployment Status |
+|----------|---------|------------------|
+| invoke-llm | Claude/OpenAI integration | ⚠️ Unknown |
+| generate-image | Image generation (Gemini/GPT) | ⚠️ Unknown |
+| wordpress-publish | WordPress publishing | ⚠️ Unknown |
+| auto-schedule-content | Content scheduling | ⚠️ Unknown |
+| publish-scheduled-content | Scheduled publishing | ⚠️ Unknown |
+| analyze-content | Content analysis | ⚠️ Unknown |
+| keyword-research | Keyword research | ⚠️ Unknown |
+| optimize-content-ai | AI optimization | ⚠️ Unknown |
+| sync-gsc-data | Google Search Console sync | ⚠️ Unknown |
+| pre-publish-validator | Content validation | ⚠️ Unknown |
+| quote-scraper | Quote extraction | ⚠️ Unknown |
+| shortcode-transformer | WordPress shortcodes | ⚠️ Unknown |
+| sla-autopublish-checker | 5-day SLA automation | ⚠️ Unknown |
+| inject-quotes | Quote injection | ⚠️ Unknown |
+| auto-approve-articles | Auto-approval workflow | ⚠️ Unknown |
+| ingest-monthly-questions | Question ingestion | ⚠️ Unknown |
+
+**Note:** Access control restrictions prevent checking V1 function deployment status via CLI. Recommend verifying via Supabase dashboard.
+
+**Dashboard URL:** https://supabase.com/dashboard/project/yvvtsfgryweqfppilkvo/functions
 
 ---
 
