@@ -40,6 +40,10 @@ import SettingsV2 from './SettingsV2';
 import ArticleReview from './ArticleReview';
 import AITraining from './AITraining';
 
+// Perdia V3 - New Navigation Pages
+import TopicDiscovery from './TopicDiscovery';
+import SiteAnalysis from './SiteAnalysis';
+
 // Auth wrapper component
 function AuthenticatedRoute({ children }) {
   const [user, setUser] = useState(null);
@@ -148,6 +152,9 @@ export default function Pages() {
                   <Route path="/topic-questions" element={<TopicQuestionsManager />} />
                   <Route path="/pipeline-config" element={<PipelineConfiguration />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/topic-discovery" element={<TopicDiscovery />} />
+                  <Route path="/site-analysis" element={<SiteAnalysis />} />
+                  <Route path="/ai-training" element={<AITraining />} />
                   <Route path="*" element={<Navigate to="/v1" replace />} />
                 </Routes>
               </AppLayout>
@@ -155,12 +162,12 @@ export default function Pages() {
           }
         />
 
-        {/* Default route - Redirect to V2 (Simplified) */}
+        {/* Default route - Redirect to V1 (Updated with V3 Navigation) */}
         <Route
           path="/"
           element={
             <AuthenticatedRoute>
-              <Navigate to="/v2" replace />
+              <Navigate to="/v1" replace />
             </AuthenticatedRoute>
           }
         />

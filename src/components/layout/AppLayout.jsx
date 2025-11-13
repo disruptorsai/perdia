@@ -2,26 +2,28 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart3,
-  BrainCircuit,
-  TrendingUp,
   FileText,
-  CheckSquare,
-  Zap,
-  Globe,
-  User,
-  Menu,
-  BookOpen
+  ListChecks,
+  Tag,
+  Settings,
+  Plug,
+  Sparkles,
+  TrendingUp,
+  Microscope,
+  Brain,
+  LayoutDashboard,
+  User
 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
   SidebarHeader,
   SidebarFooter,
   Badge
@@ -33,17 +35,7 @@ const navigationItems = [
   {
     title: 'Dashboard',
     url: '/',
-    icon: BarChart3,
-  },
-  {
-    title: 'AI Content Engine',
-    url: '/ai-agents',
-    icon: BrainCircuit,
-  },
-  {
-    title: 'Keyword Manager',
-    url: '/keywords',
-    icon: TrendingUp,
+    icon: LayoutDashboard,
   },
   {
     title: 'Content Library',
@@ -51,29 +43,53 @@ const navigationItems = [
     icon: FileText,
   },
   {
-    title: 'Approval Queue',
+    title: 'Review Queue',
     url: '/approvals',
-    icon: CheckSquare,
+    icon: ListChecks,
   },
   {
-    title: 'Blog Library',
-    url: '/blog',
-    icon: BookOpen,
+    title: 'Keywords & Clusters',
+    url: '/keywords',
+    icon: Tag,
   },
   {
-    title: 'Automation Controls',
-    url: '/automation',
-    icon: Zap,
-  },
-  {
-    title: 'WordPress Connection',
-    url: '/wordpress',
-    icon: Globe,
-  },
-  {
-    title: 'Performance Dashboard',
+    title: 'Analytics',
     url: '/performance',
     icon: BarChart3,
+  },
+  {
+    title: 'AI Training',
+    url: '/ai-training',
+    icon: Brain,
+  },
+  {
+    title: 'Integrations',
+    url: '/wordpress',
+    icon: Plug,
+  },
+  {
+    title: 'Settings',
+    url: '/settings',
+    icon: Settings,
+  },
+];
+
+const aiTools = [
+  {
+    title: 'Generate Article',
+    url: '/ai-agents',
+    icon: Sparkles,
+    featured: true
+  },
+  {
+    title: 'Topic Discovery',
+    url: '/topic-discovery',
+    icon: TrendingUp,
+  },
+  {
+    title: 'Site Analysis',
+    url: '/site-analysis',
+    icon: Microscope,
   },
 ];
 
@@ -92,41 +108,68 @@ function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-3 py-4">
         <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
-
-                // Handle "Coming Soon" items
-                if (item.comingSoon) {
-                  return (
-                    <SidebarMenuItem key={item.url}>
-                      <div className="flex items-center justify-between px-3 py-2 cursor-not-allowed opacity-50">
-                        <div className="flex items-center gap-3">
-                          <item.icon className="w-5 h-5 text-muted-foreground" />
-                          <span className="text-muted-foreground">{item.title}</span>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          Coming Soon
-                        </Badge>
-                      </div>
-                    </SidebarMenuItem>
-                  );
-                }
-
-                // Regular navigation items
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive}
-                      className="transition-all duration-200"
+                      className={`
+                        transition-all duration-200 rounded-lg mb-1
+                        ${isActive
+                          ? 'bg-blue-50 text-blue-700 font-medium shadow-sm border-l-4 border-blue-600'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-blue-700'
+                        }
+                      `}
                     >
-                      <Link to={item.url} className="flex items-center gap-3">
+                      <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
                         <item.icon className="w-5 h-5" />
-                        <span>{item.title}</span>
+                        <span className="text-sm">{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="text-xs font-semibold text-emerald-600 uppercase tracking-wider px-3 mb-2">
+            AI Tools
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {aiTools.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      className={`
+                        transition-all duration-200 rounded-lg mb-1
+                        ${isActive
+                          ? 'bg-emerald-50 text-emerald-700 font-medium shadow-sm border-l-4 border-emerald-600'
+                          : 'text-gray-600 hover:bg-emerald-50/50 hover:text-emerald-700'
+                        }
+                        ${item.featured ? 'border-2 border-emerald-200' : ''}
+                      `}
+                    >
+                      <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
+                        <item.icon className="w-5 h-5" />
+                        <span className="text-sm">{item.title}</span>
+                        {item.featured && (
+                          <span className="ml-auto text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-medium">
+                            New
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -163,21 +206,6 @@ export default function AppLayout({ children }) {
         <AppSidebar />
 
         <div className="flex-1 flex flex-col">
-          {/* Mobile header */}
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:hidden">
-            <SidebarTrigger>
-              <Menu className="h-6 w-6" />
-            </SidebarTrigger>
-            <img
-              src="/logo.png"
-              alt="Perdia Education Logo"
-              className="h-10 w-auto"
-            />
-            <div className="ml-auto">
-              <HelpMenu />
-            </div>
-          </header>
-
           {/* Main content */}
           <main className="flex-1 bg-slate-50">
             <ErrorBoundary errorMessage="An error occurred while loading this page.">
