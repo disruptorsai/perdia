@@ -56,7 +56,7 @@ IMPORTANT: Return ONLY the JSON object wrapped in a code block. Do not include e
         prompt,
         model: 'sonar-pro',
         temperature: 0.3,
-        maxTokens: 2000,
+        maxTokens: 4000,
       }),
     });
 

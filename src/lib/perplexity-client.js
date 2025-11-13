@@ -262,41 +262,62 @@ IMPORTANT: Return ONLY the JSON object wrapped in a code block. Do not include e
     prompt,
     searchDomainFilter: [], // No restrictions for broader search
     temperature: 0.3,
-    maxTokens: 2000,
+    maxTokens: 4000, // Increased to support up to 50 questions
   });
 
   // Try to parse JSON response
   let questionsData;
+  let jsonContent = response.content;
+
+  // Extract from markdown code block if present
+  const jsonMatch = jsonContent.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (jsonMatch) {
+    jsonContent = jsonMatch[1];
+  }
+
   try {
     // First try: Direct JSON parse
-    questionsData = JSON.parse(response.content);
+    questionsData = JSON.parse(jsonContent);
     return questionsData.questions || [];
   } catch (error) {
-    // Second try: Extract JSON from markdown code block
-    const jsonMatch = response.content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-    if (jsonMatch) {
-      try {
-        questionsData = JSON.parse(jsonMatch[1]);
-        return questionsData.questions || [];
-      } catch (e) {
-        console.warn('[Perplexity] Failed to parse JSON from code block:', e.message);
-      }
-    }
+    // Handle truncated JSON (common when hitting token limit)
+    console.warn('[Perplexity] JSON parse failed, attempting to fix truncated JSON:', error.message);
 
-    // Third try: Extract JSON object pattern
-    const objMatch = response.content.match(/\{[\s\S]*"questions"[\s\S]*\}/);
-    if (objMatch) {
-      try {
-        questionsData = JSON.parse(objMatch[0]);
-        return questionsData.questions || [];
-      } catch (e) {
-        console.warn('[Perplexity] Failed to parse extracted JSON object:', e.message);
-      }
-    }
+    try {
+      // Fix truncated JSON by closing unclosed brackets/braces
+      let fixedJson = jsonContent.trim();
 
-    console.warn('[Perplexity] Failed to parse questions JSON');
-    console.log('[Perplexity] Response content:', response.content);
-    return [];
+      // If it ends mid-object, close it
+      if (!fixedJson.endsWith('}') && !fixedJson.endsWith(']')) {
+        // Remove incomplete last entry
+        const lastComma = fixedJson.lastIndexOf(',');
+        if (lastComma > 0) {
+          fixedJson = fixedJson.substring(0, lastComma);
+        }
+      }
+
+      // Count opening/closing brackets and braces
+      const openBraces = (fixedJson.match(/\{/g) || []).length;
+      const closeBraces = (fixedJson.match(/\}/g) || []).length;
+      const openBrackets = (fixedJson.match(/\[/g) || []).length;
+      const closeBrackets = (fixedJson.match(/\]/g) || []).length;
+
+      // Add missing closing brackets/braces
+      for (let i = 0; i < (openBrackets - closeBrackets); i++) {
+        fixedJson += '\n  ]';
+      }
+      for (let i = 0; i < (openBraces - closeBraces); i++) {
+        fixedJson += '\n}';
+      }
+
+      questionsData = JSON.parse(fixedJson);
+      console.log('[Perplexity] Successfully fixed and parsed truncated JSON');
+      return questionsData.questions || [];
+    } catch (fixError) {
+      console.warn('[Perplexity] Failed to fix truncated JSON:', fixError.message);
+      console.log('[Perplexity] Response content:', response.content);
+      return [];
+    }
   }
 }
 
