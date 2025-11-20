@@ -193,96 +193,97 @@ export default function Layout() {
       <div className="min-h-screen flex flex-col w-full bg-gray-25">
         {/* Top Header Bar */}
         <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-gray-900">Perdia</h1>
-          <div className="h-6 w-px bg-gray-300"></div>
-          <span className="text-sm text-gray-600">{currentPageTitle}</span>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-gray-900">Perdia</h1>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <span className="text-sm text-gray-600">{currentPageTitle}</span>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
+                <div className="text-right hidden md:block">
+                  <p className="text-sm font-medium text-gray-900">{getDisplayName()}</p>
+                  <p className="text-xs text-gray-500">User</p>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">{getInitials()}</span>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col">
+                  <span className="font-semibold">{getDisplayName()}</span>
+                  <span className="text-xs text-gray-500 font-normal">{userData?.email}</span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
-              <div className="text-right hidden md:block">
-                <p className="text-sm font-medium text-gray-900">{getDisplayName()}</p>
-                <p className="text-xs text-gray-500">User</p>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">{getInitials()}</span>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col">
-                <span className="font-semibold">{getDisplayName()}</span>
-                <span className="text-xs text-gray-500 font-normal">{userData?.email}</span>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
-              <User className="w-4 h-4 mr-2" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        {/* Main Content Area - Sidebar and Content */}
+        <div className="flex flex-1 overflow-hidden">
+          <SidebarProvider defaultOpen={true}>
+            <Sidebar collapsible="icon" className="border-r border-gray-200 bg-white">
+              <SidebarContent className="px-2 py-4">
+                <div className="px-2 mb-6 flex items-center justify-between">
+                  <SidebarTrigger />
+                </div>
 
-      {/* Main Content Area - Sidebar and Content */}
-      <div className="flex flex-1 overflow-hidden">
-        <SidebarProvider defaultOpen={true}>
-          <Sidebar collapsible="icon" className="border-r border-gray-200 bg-white">
-            <SidebarContent className="px-2 py-4">
-              <div className="px-2 mb-6 flex items-center justify-between">
-                <SidebarTrigger />
-              </div>
-
-              {navigationGroups.map((group, groupIndex) => (
-                <SidebarGroup key={groupIndex} className="mb-4">
-                  <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
-                    {group.label}
-                  </SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {group.items.map((item) => {
-                        const isActive = location.pathname === item.url;
-                        return (
-                          <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton
-                              asChild
-                              className={`
+                {navigationGroups.map((group, groupIndex) => (
+                  <SidebarGroup key={groupIndex} className="mb-4">
+                    <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+                      {group.label}
+                    </SidebarGroupLabel>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {group.items.map((item) => {
+                          const isActive = location.pathname === item.url;
+                          return (
+                            <SidebarMenuItem key={item.title}>
+                              <SidebarMenuButton
+                                asChild
+                                className={`
                                 transition-all duration-200 rounded-lg mb-1
                                 ${item.primary && !isActive
-                                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-sm hover:from-blue-700 hover:to-blue-800'
-                                  : isActive
-                                    ? 'bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700'
-                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                                }
+                                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-sm hover:from-blue-700 hover:to-blue-800'
+                                    : isActive
+                                      ? 'bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700'
+                                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                                  }
                               `}
-                            >
-                              <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
-                                <item.icon className="w-5 h-5" />
-                                <span className="text-sm">{item.title}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              ))}
-            </SidebarContent>
-          </Sidebar>
+                              >
+                                <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
+                                  <item.icon className="w-5 h-5" />
+                                  <span className="text-sm">{item.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                ))}
+              </SidebarContent>
+            </Sidebar>
 
-          <main className="flex-1 overflow-auto bg-gray-50">
-            <Outlet />
-          </main>
-        </SidebarProvider>
+            <main className="flex-1 overflow-auto bg-gray-50">
+              <Outlet />
+            </main>
+          </SidebarProvider>
+        </div>
       </div>
     </>
   );
