@@ -7,17 +7,19 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Plus } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 import { Article, ContentIdea, SystemSetting } from "@/lib/perdia-sdk";
 import KanbanBoard from "@/components/workflow/KanbanBoard";
+import SourceSelector from "@/components/workflow/SourceSelector";
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [generatingIdeas, setGeneratingIdeas] = useState({});
+  const [showSourceSelector, setShowSourceSelector] = useState(false);
 
   // Fetch articles
   const { data: articles = [], isLoading: articlesLoading } = useQuery({
@@ -179,7 +181,7 @@ export default function Dashboard() {
               New Article
             </Button>
             <Button
-              onClick={() => navigate('/topic-discovery')}
+              onClick={() => setShowSourceSelector(true)}
               variant="outline"
               className="gap-2"
               size="lg"
@@ -230,6 +232,20 @@ export default function Dashboard() {
           generatingIdeas={generatingIdeas}
           onGenerateArticle={handleGenerateArticle}
         />
+
+        {/* Source Selector Modal */}
+        <AnimatePresence>
+          {showSourceSelector && (
+            <SourceSelector
+              onClose={() => setShowSourceSelector(false)}
+              onComplete={() => {
+                setShowSourceSelector(false);
+                queryClient.invalidateQueries({ queryKey: ['workflow-ideas'] });
+                toast.success('Ideas added to queue!');
+              }}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -310,9 +310,9 @@ serve(async (req) => {
     else if (provider === 'xai' || provider === 'grok') {
       console.log('🤖 Using xAI/Grok provider');
 
-      const apiKey = Deno.env.get('XAI_API_KEY');
+      const apiKey = Deno.env.get('GROK_API_KEY');
       if (!apiKey) {
-        throw new Error('XAI_API_KEY not configured in Supabase secrets');
+        throw new Error('GROK_API_KEY not configured in Supabase secrets');
       }
 
       // Build messages array

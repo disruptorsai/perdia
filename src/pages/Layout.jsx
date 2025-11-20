@@ -25,6 +25,7 @@ import {
   Wand2,
   ClipboardCheck
 } from "lucide-react";
+import AutomationEngine from "@/components/automation/AutomationEngine";
 import {
   Sidebar,
   SidebarContent,
@@ -187,9 +188,11 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col w-full bg-gray-25">
-      {/* Top Header Bar */}
-      <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+    <>
+      <AutomationEngine />
+      <div className="min-h-screen flex flex-col w-full bg-gray-25">
+        {/* Top Header Bar */}
+        <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-gray-900">Perdia</h1>
           <div className="h-6 w-px bg-gray-300"></div>
@@ -281,6 +284,6 @@ export default function Layout() {
           </main>
         </SidebarProvider>
       </div>
-    </div>
+    </>
   );
 }
