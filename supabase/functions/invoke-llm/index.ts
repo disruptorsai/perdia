@@ -190,9 +190,20 @@ serve(async (req) => {
       };
 
       // Add system prompt if provided
-      if (system_prompt) {
-        requestParams.system = system_prompt;
-        console.log('📋 System prompt length:', system_prompt.length);
+      let finalSystemPrompt = system_prompt || '';
+
+      // If JSON schema is requested, add JSON instructions to system prompt
+      if (response_json_schema) {
+        console.log('📋 JSON schema requested, adding JSON output instructions');
+        const jsonInstruction = '\n\nIMPORTANT: You must respond with ONLY valid JSON matching this schema:\n' +
+          JSON.stringify(response_json_schema, null, 2) +
+          '\n\nDo not include any explanatory text, markdown formatting, or code blocks. Return ONLY the raw JSON object.';
+        finalSystemPrompt = finalSystemPrompt ? finalSystemPrompt + jsonInstruction : jsonInstruction.trim();
+      }
+
+      if (finalSystemPrompt) {
+        requestParams.system = finalSystemPrompt;
+        console.log('📋 System prompt length:', finalSystemPrompt.length);
       }
 
       console.log('🚀 Calling Anthropic API...');
@@ -207,8 +218,19 @@ serve(async (req) => {
       console.log('Input tokens:', anthropicResponse.usage.input_tokens);
       console.log('Output tokens:', anthropicResponse.usage.output_tokens);
 
+      // Clean response content if JSON schema was requested
+      let responseContent = anthropicResponse.content[0].text;
+      if (response_json_schema) {
+        // Strip markdown code blocks (```json ... ``` or ``` ... ```)
+        responseContent = responseContent
+          .replace(/^```(?:json)?\s*/i, '')  // Remove opening ```json or ```
+          .replace(/\s*```\s*$/i, '')        // Remove closing ```
+          .trim();
+        console.log('🧹 Cleaned JSON response (removed markdown code blocks)');
+      }
+
       response = {
-        content: anthropicResponse.content[0].text,
+        content: responseContent,
         usage: {
           input_tokens: anthropicResponse.usage.input_tokens,
           output_tokens: anthropicResponse.usage.output_tokens,
