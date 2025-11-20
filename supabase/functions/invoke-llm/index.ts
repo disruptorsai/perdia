@@ -37,7 +37,7 @@ const corsHeaders = {
 };
 
 interface LLMRequest {
-  provider: 'claude' | 'openai' | 'anthropic';
+  provider: 'claude' | 'openai' | 'anthropic' | 'xai' | 'grok' | 'perplexity';
   model?: string;
   prompt?: string;
   messages?: Array<{ role: string; content: string }>;
@@ -282,6 +282,135 @@ serve(async (req) => {
           output_tokens: openaiData.usage.completion_tokens,
         },
         model: openaiData.model,
+      };
+    }
+    // Handle xAI/Grok API
+    else if (provider === 'xai' || provider === 'grok') {
+      console.log('🤖 Using xAI/Grok provider');
+
+      const apiKey = Deno.env.get('XAI_API_KEY');
+      if (!apiKey) {
+        throw new Error('XAI_API_KEY not configured in Supabase secrets');
+      }
+
+      // Build messages array
+      let messagesToSend;
+      if (messages) {
+        messagesToSend = messages;
+        if (system_prompt) {
+          messagesToSend = [
+            { role: 'system', content: system_prompt },
+            ...messages
+          ];
+        }
+      } else {
+        messagesToSend = [{ role: 'user', content: prompt! }];
+        if (system_prompt) {
+          messagesToSend.unshift({ role: 'system', content: system_prompt });
+        }
+      }
+
+      const requestBody: any = {
+        model: model || 'grok-2-1212',
+        messages: messagesToSend,
+        temperature: temperature ?? 0.7,
+        max_tokens: max_tokens || 8000,
+        stream: false,
+      };
+
+      console.log('🚀 Calling xAI API...');
+      console.log('Model:', requestBody.model);
+
+      const xaiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!xaiResponse.ok) {
+        const errorData = await xaiResponse.json();
+        throw new Error(`xAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const xaiData = await xaiResponse.json();
+
+      console.log('✅ xAI response received');
+      console.log('Content length:', xaiData.choices[0].message.content.length);
+
+      response = {
+        content: xaiData.choices[0].message.content,
+        usage: {
+          input_tokens: xaiData.usage.prompt_tokens || 0,
+          output_tokens: xaiData.usage.completion_tokens || 0,
+        },
+        model: xaiData.model,
+      };
+    }
+    // Handle Perplexity API
+    else if (provider === 'perplexity') {
+      console.log('🤖 Using Perplexity provider');
+
+      const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
+      if (!apiKey) {
+        throw new Error('PERPLEXITY_API_KEY not configured in Supabase secrets');
+      }
+
+      // Build messages array
+      let messagesToSend;
+      if (messages) {
+        messagesToSend = messages;
+        if (system_prompt) {
+          messagesToSend = [
+            { role: 'system', content: system_prompt },
+            ...messages
+          ];
+        }
+      } else {
+        messagesToSend = [{ role: 'user', content: prompt! }];
+        if (system_prompt) {
+          messagesToSend.unshift({ role: 'system', content: system_prompt });
+        }
+      }
+
+      const requestBody: any = {
+        model: model || 'sonar-pro',
+        messages: messagesToSend,
+        temperature: temperature ?? 0.7,
+        max_tokens: max_tokens || 4000,
+      };
+
+      console.log('🚀 Calling Perplexity API...');
+      console.log('Model:', requestBody.model);
+
+      const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!perplexityResponse.ok) {
+        const errorData = await perplexityResponse.json();
+        throw new Error(`Perplexity API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const perplexityData = await perplexityResponse.json();
+
+      console.log('✅ Perplexity response received');
+      console.log('Content length:', perplexityData.choices[0].message.content.length);
+
+      response = {
+        content: perplexityData.choices[0].message.content,
+        usage: {
+          input_tokens: perplexityData.usage.prompt_tokens || 0,
+          output_tokens: perplexityData.usage.completion_tokens || 0,
+        },
+        model: perplexityData.model,
       };
     } else {
       return new Response(

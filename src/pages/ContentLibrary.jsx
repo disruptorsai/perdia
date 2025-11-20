@@ -1,365 +1,287 @@
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Link } from "react-router-dom";
+import { format } from "date-fns";
+import { Search, Filter, Plus, ExternalLink, CheckCircle2, Globe, Trash2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Article, Cluster } from "@/lib/perdia-sdk";
 
-import React, { useState, useEffect } from 'react';
-import { ContentQueue } from '@/lib/perdia-sdk';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Search, Eye, Edit, Trash2, Loader2, Calendar, Image } from 'lucide-react';
-import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from 'date-fns';
-import PublishToWordPress from '../components/content/PublishToWordPress';
-import ImageUploadModal from '../components/content/ImageUploadModal';
+const statusColors = {
+  draft: "bg-gray-100 text-gray-700 border-gray-300",
+  in_review: "bg-amber-100 text-amber-700 border-amber-300",
+  approved: "bg-blue-100 text-blue-700 border-blue-300",
+  published: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  needs_revision: "bg-red-100 text-red-700 border-red-300"
+};
 
 export default function ContentLibrary() {
-  const [content, setContent] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedContent, setSelectedContent] = useState(null);
-  const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [selectedArticleForImage, setSelectedArticleForImage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [selectedArticles, setSelectedArticles] = useState([]);
 
-  useEffect(() => {
-    loadContent();
-  }, []);
+  const queryClient = useQueryClient();
 
-  const loadContent = async () => {
-    setLoading(true);
-    try {
-      const data = await ContentQueue.list('-created_date');
-      setContent(data);
-    } catch (error) {
-      console.error("Error loading content:", error);
-      toast.error("Failed to load content");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this content?')) return;
-
-    try {
-      await ContentQueue.delete(id);
-      toast.success('Content deleted');
-      loadContent();
-    } catch (error) {
-      console.error("Error deleting content:", error);
-      toast.error("Failed to delete content");
-    }
-  };
-
-  const handleOpenImageModal = (article) => {
-    setSelectedArticleForImage(article);
-    setImageModalOpen(true);
-  };
-
-  const handleImageAdded = async (imageData) => {
-    try {
-      await ContentQueue.update(selectedArticleForImage.id, {
-        featured_image_url: imageData.url,
-        featured_image_path: imageData.path,
-        featured_image_alt_text: imageData.altText,
-        featured_image_source: imageData.source
+  const { data: articles = [], isLoading } = useQuery({
+    queryKey: ['articles'],
+    queryFn: async () => {
+      const result = await Article.find({}, {
+        orderBy: { column: 'created_date', ascending: false },
+        limit: 500
       });
-
-      toast.success('Featured image added successfully!');
-      loadContent();
-      setImageModalOpen(false);
-      setSelectedArticleForImage(null);
-    } catch (error) {
-      console.error('Error adding image:', error);
-      toast.error('Failed to add image');
-    }
-  };
-
-  const filteredContent = content.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (item.target_keywords && item.target_keywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase())));
-    const matchesType = filterType === 'all' || item.content_type === filterType;
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    return matchesSearch && matchesType && matchesStatus;
+      return result;
+    },
   });
 
-  const stats = {
-    total: content.length,
-    new_articles: content.filter(c => c.content_type === 'new_article').length,
-    optimizations: content.filter(c => c.content_type === 'page_optimization').length,
-    published: content.filter(c => c.status === 'published').length
-  };
+  const { data: clusters = [] } = useQuery({
+    queryKey: ['clusters'],
+    queryFn: () => Cluster.find({}),
+  });
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'pending_review': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-blue-100 text-blue-800';
-      case 'scheduled': return 'bg-purple-100 text-purple-800';
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const deleteMutation = useMutation({
+    mutationFn: async (articleIds) => {
+      await Promise.all(articleIds.map(id => Article.delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['articles'] });
+      setSelectedArticles([]);
+      alert('Article(s) deleted successfully');
+    },
+  });
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedArticles(filteredArticles.map(a => a.id));
+    } else {
+      setSelectedArticles([]);
     }
   };
 
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'new_article': return 'bg-blue-50 text-blue-700';
-      case 'page_optimization': return 'bg-purple-50 text-purple-700';
-      case 'update': return 'bg-green-50 text-green-700';
-      case 'promotional': return 'bg-pink-50 text-pink-700';
-      case 'strategy_guide': return 'bg-orange-50 text-orange-700';
-      case 'company_story': return 'bg-amber-50 text-amber-700';
-      case 'lead_magnet': return 'bg-indigo-50 text-indigo-700';
-      case 'social_content': return 'bg-rose-50 text-rose-700';
-      default: return 'bg-gray-50 text-gray-700';
+  const handleSelectArticle = (articleId) => {
+    setSelectedArticles(prev =>
+      prev.includes(articleId)
+        ? prev.filter(id => id !== articleId)
+        : [...prev, articleId]
+    );
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`Delete ${selectedArticles.length} article(s)? This cannot be undone.`)) {
+      deleteMutation.mutate(selectedArticles);
     }
   };
 
-  const getTypeLabel = (type) => {
-    const labels = {
-      'new_article': 'SEO Article',
-      'page_optimization': 'Content Optimization',
-      'update': 'Update',
-      'promotional': 'Promotional Content',
-      'strategy_guide': 'Strategy Guide',
-      'company_story': 'Company Story',
-      'lead_magnet': 'Lead Magnet',
-      'social_content': 'Social Media'
-    };
-    return labels[type] || type.replace('_', ' ');
+  const filteredArticles = articles.filter(article => {
+    const matchesSearch = article.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || article.status === statusFilter;
+    const matchesType = typeFilter === "all" || article.type === typeFilter;
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  const getClusterName = (clusterId) => {
+    const cluster = clusters.find(c => c.id === clusterId);
+    return cluster?.name || 'Uncategorized';
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <FileText className="w-8 h-8 text-purple-600" />
-            Content Library
-          </h1>
-          <p className="text-slate-600 mt-1">Manage all generated and optimized content</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-blue-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-purple-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">New Articles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.new_articles}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-indigo-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Optimizations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.optimizations}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-green-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Published</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.published}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>Content Items ({filteredContent.length})</CardTitle>
-            <div className="flex gap-2 w-full sm:w-auto flex-wrap">
-              <div className="relative flex-1 sm:flex-initial">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Search content..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
-                />
-              </div>
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="new_article">SEO Articles</SelectItem>
-                  <SelectItem value="page_optimization">Optimizations</SelectItem>
-                  <SelectItem value="promotional">Promotional</SelectItem>
-                  <SelectItem value="strategy_guide">Strategy Guides</SelectItem>
-                  <SelectItem value="company_story">Company Stories</SelectItem>
-                  <SelectItem value="lead_magnet">Lead Magnets</SelectItem>
-                  <SelectItem value="social_content">Social Content</SelectItem>
-                  <SelectItem value="update">Updates</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="pending_review">Pending Review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+        >
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Content Library</h1>
+            <p className="text-gray-600 mt-1">
+              {selectedArticles.length > 0
+                ? `${selectedArticles.length} article(s) selected`
+                : 'Manage all your articles in one place'}
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            </div>
-          ) : filteredContent.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Content Yet</h3>
-              <p className="text-slate-500 mb-4">Use the AI Content Engine to generate your first article</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredContent.map((item) => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-slate-900 truncate">{item.title}</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <Badge className={getTypeColor(item.content_type)}>
-                            {getTypeLabel(item.content_type)}
-                          </Badge>
-                          <Badge className={getStatusColor(item.status)}>
-                            {item.status.replace('_', ' ')}
-                          </Badge>
-                          {item.agent_name && (
-                            <Badge variant="outline" className="text-xs">
-                              Generated by: {item.agent_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </Badge>
-                          )}
-                          {item.automation_mode && (
-                            <Badge variant="outline">{item.automation_mode}</Badge>
-                          )}
-                          {item.word_count && (
-                            <Badge variant="outline">{item.word_count} words</Badge>
-                          )}
-                          {item.wordpress_post_id && (
-                            <Badge className="bg-green-100 text-green-800">
-                              Published to WP
-                            </Badge>
-                          )}
-                        </div>
-                        {item.target_keywords && item.target_keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {item.target_keywords.slice(0, 5).map((keyword, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {keyword}
-                              </Badge>
-                            ))}
-                            {item.target_keywords.length > 5 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{item.target_keywords.length - 5} more
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {format(new Date(item.created_date), 'MMM d, yyyy')}
-                          </span>
-                          {item.created_by && (
-                            <span>By: {item.created_by}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {(item.status === 'approved' || item.status === 'scheduled') && !item.wordpress_post_id && (
-                          <PublishToWordPress
-                            content={item}
-                            onPublished={() => loadContent()}
-                          />
-                        )}
-                        <div className="flex gap-2 flex-wrap">
-                          <Button
-                            variant={item.featured_image_url ? "outline" : "default"}
-                            size="sm"
-                            onClick={() => handleOpenImageModal(item)}
-                            className={item.featured_image_url ? "" : "bg-purple-600 hover:bg-purple-700"}
-                          >
-                            <Image className="w-4 h-4 mr-1" />
-                            {item.featured_image_url ? "Change" : "Add"} Image
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setSelectedContent(item)}>
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div className="flex gap-2">
+            {selectedArticles.length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete {selectedArticles.length}
+              </Button>
+            )}
+            <Link to="/article-wizard">
+              <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg gap-2">
+                <Plus className="w-5 h-5" />
+                New Article
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
 
-      {selectedContent && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedContent(null)}>
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <CardHeader className="border-b">
-              <div className="flex items-center justify-between">
-                <CardTitle>{selectedContent.title}</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedContent(null)}>
-                  ✕
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 overflow-y-auto max-h-[70vh]">
-              <div
-                className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedContent.content }}
+        {/* Filters */}
+        <Card className="p-6 border-none shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="md:col-span-2 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Search articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="in_review">In Review</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="needs_revision">Needs Revision</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="ranking">Ranking</SelectItem>
+                <SelectItem value="career_guide">Career Guide</SelectItem>
+                <SelectItem value="listicle">Listicle</SelectItem>
+                <SelectItem value="guide">Guide</SelectItem>
+                <SelectItem value="faq">FAQ</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              <span>Showing {filteredArticles.length} of {articles.length} articles</span>
+            </div>
+            {filteredArticles.length > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedArticles.length === filteredArticles.length && filteredArticles.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                <span>Select All</span>
+              </label>
+            )}
+          </div>
+        </Card>
 
-      {imageModalOpen && selectedArticleForImage && (
-        <ImageUploadModal
-          isOpen={imageModalOpen}
-          onClose={() => {
-            setImageModalOpen(false);
-            setSelectedArticleForImage(null);
-          }}
-          onImageAdded={handleImageAdded}
-          articleData={selectedArticleForImage}
-        />
-      )}
+        {/* Articles Grid */}
+        <div className="grid gap-4">
+          {isLoading ? (
+            <Card className="p-8 text-center">
+              <p className="text-gray-500">Loading articles...</p>
+            </Card>
+          ) : filteredArticles.length === 0 ? (
+            <Card className="p-12 text-center">
+              <p className="text-gray-500">No articles found. Try adjusting your filters.</p>
+            </Card>
+          ) : (
+            filteredArticles.map((article, index) => (
+              <motion.div
+                key={article.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="p-6 hover:shadow-xl transition-all duration-300 border-none shadow-lg group">
+                  <div className="flex items-start gap-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedArticles.includes(article.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleSelectArticle(article.id);
+                      }}
+                      className="mt-1 w-4 h-4 rounded border-gray-300 cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <Link to={`/article-editor?id=${article.id}`} className="flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+                              {article.title}
+                            </h3>
+                            <ExternalLink className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          {article.excerpt && (
+                            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                              {article.excerpt}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <Badge variant="outline" className={`${statusColors[article.status]} border font-medium`}>
+                              {article.status?.replace(/_/g, ' ')}
+                            </Badge>
+                            {article.wp_post_id && (
+                              <div className="flex items-center gap-1 text-green-600" title="Published to WordPress">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <Globe className="w-3 h-3" />
+                              </div>
+                            )}
+                            <span className="text-xs text-gray-500 capitalize">
+                              {article.type?.replace(/_/g, ' ')}
+                            </span>
+                            {article.cluster_id && (
+                              <>
+                                <span className="text-xs text-gray-400">•</span>
+                                <span className="text-xs text-gray-500">
+                                  {getClusterName(article.cluster_id)}
+                                </span>
+                              </>
+                            )}
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">
+                              {format(new Date(article.created_date), 'MMM d, yyyy')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          {article.word_count > 0 && (
+                            <span className="text-xs text-gray-500">
+                              {article.word_count.toLocaleString()} words
+                            </span>
+                          )}
+                          {article.editor_score && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              Score: {article.editor_score}/10
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </Card>
+              </motion.div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }

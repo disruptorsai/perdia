@@ -488,6 +488,19 @@ export const AgentDefinition = new BaseEntity('agent_definitions');
 export const AgentConversation = new BaseEntity('agent_conversations');
 export const AgentMessage = new BaseEntity('agent_messages');
 
+// V3 Content System Entities (NEW - matches Base44 v3 export)
+export const Article = new BaseEntity('articles');
+export const ContentIdea = new BaseEntity('content_ideas');
+export const Cluster = new BaseEntity('clusters');
+export const TopicQuestion = new BaseEntity('topic_questions');
+
+// V3 Support Entities
+export const Shortcode = new BaseEntity('shortcodes');
+export const TrainingData = new BaseEntity('training_data');
+export const SiteArticle = new BaseEntity('site_articles');
+export const SystemSetting = new BaseEntity('system_settings');
+export const ArticleRevision = new BaseEntity('article_revisions');
+
 // Legacy Entities (NOT USED - kept for compatibility)
 export const Client = new BaseEntity('clients'); // Not implemented
 export const Project = new BaseEntity('projects'); // Not implemented
