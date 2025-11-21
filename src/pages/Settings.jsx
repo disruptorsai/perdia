@@ -94,7 +94,7 @@ export default function Settings() {
   const [autoPublishDays, setAutoPublishDays] = useState('5');
   const [dailyLimit, setDailyLimit] = useState('10');
   const [weeklyLimit, setWeeklyLimit] = useState('100');
-  const [defaultModel, setDefaultModel] = useState('claude-sonnet-4-5-20250929');
+  const [defaultModel, setDefaultModel] = useState('grok-2-1212');
   const [temperature, setTemperature] = useState('0.7');
   const [maxTokens, setMaxTokens] = useState('4000');
   const [minWordCount, setMinWordCount] = useState('800');
@@ -109,7 +109,7 @@ export default function Settings() {
       setAutoPublishDays(getSettingValue('auto_publish_days', '5'));
       setDailyLimit(getSettingValue('daily_limit', '10'));
       setWeeklyLimit(getSettingValue('weekly_limit', '100'));
-      setDefaultModel(getSettingValue('default_model', 'claude-sonnet-4-5-20250929'));
+      setDefaultModel(getSettingValue('default_model', 'grok-2-1212'));
       setTemperature(getSettingValue('temperature', '0.7'));
       setMaxTokens(getSettingValue('max_tokens', '4000'));
       setMinWordCount(getSettingValue('min_word_count', '800'));
@@ -348,13 +348,14 @@ export default function Settings() {
                     onChange={(e) => { setDefaultModel(e.target.value); setHasChanges(true); }}
                     className="w-full p-2 border rounded-lg"
                   >
-                    <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Primary)</option>
+                    <option value="grok-2-1212">Grok-2 (xAI - Primary)</option>
+                    <option value="grok-beta">Grok Beta (xAI)</option>
+                    <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
                     <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Fast)</option>
-                    <option value="grok-2">Grok-2 (xAI)</option>
                     <option value="gpt-4o">GPT-4o</option>
                   </select>
                   <p className="text-xs text-gray-600">
-                    Select the primary AI model for content generation
+                    Select the primary AI model for article generation (xAI provider recommended)
                   </p>
                 </div>
 
