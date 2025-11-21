@@ -90,7 +90,7 @@ export default function ArticleWizard() {
   const { data: keywords = [] } = useQuery({
     queryKey: ['keywords-wizard'],
     queryFn: async () => {
-      const kws = await Keyword.find({ target_flag: true }, {
+      const kws = await Keyword.find({ list_type: 'new_target' }, {
         orderBy: { column: 'search_volume', ascending: false },
         limit: 20
       });

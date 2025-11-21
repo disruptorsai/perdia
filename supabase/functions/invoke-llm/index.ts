@@ -357,8 +357,22 @@ serve(async (req) => {
       });
 
       if (!xaiResponse.ok) {
-        const errorData = await xaiResponse.json();
-        throw new Error(`xAI API error: ${errorData.error?.message || 'Unknown error'}`);
+        const errorText = await xaiResponse.text();
+        console.error('❌ xAI API error response:', {
+          status: xaiResponse.status,
+          statusText: xaiResponse.statusText,
+          body: errorText
+        });
+
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error?.message || errorData.message || JSON.stringify(errorData);
+        } catch (e) {
+          errorMessage = errorText || xaiResponse.statusText;
+        }
+
+        throw new Error(`xAI API error (${xaiResponse.status}): ${errorMessage}`);
       }
 
       const xaiData = await xaiResponse.json();

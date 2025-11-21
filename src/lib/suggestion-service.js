@@ -68,7 +68,7 @@ export async function getHighPriorityKeywords(limit = 10) {
     const keywords = await Keyword.find(
       {
         priority: { gte: 3 }, // Priority 3, 4, or 5
-        target_flag: true,
+        list_type: 'new_target',
       },
       {
         orderBy: [
