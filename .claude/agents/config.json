@@ -1,4 +1,19 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Perdia Education Platform Subagent Configuration - Cross-Platform Compatible (Cursor + Antigravity)",
+  "version": "2.0.0",
+  "platform_compatibility": {
+    "cursor": {
+      "mcp_config": ".claude/mcp.json",
+      "tool_prefix": "mcp__servername__",
+      "example": "mcp__supabase__list_resources()"
+    },
+    "antigravity": {
+      "mcp_config": "C:\\Users\\Disruptors\\.gemini\\antigravity\\mcp_config.json",
+      "tool_prefix": "mcp0_, mcp1_, etc.",
+      "example": "mcp0_list_tables({ project_id: 'yvvtsfgryweqfppilkvo' })"
+    }
+  },
   "agents": [
     {
       "name": "perdia-supabase-database-agent",
@@ -74,10 +89,15 @@
       "mcp_integration": {
         "server": "supabase",
         "auto_use": true,
+        "platform_notes": {
+          "cursor": "Use mcp__supabase__ prefix for all tools",
+          "antigravity": "Use mcp0_ prefix, always pass project_id parameter"
+        },
         "commands": [
           "describe-table",
           "list-tables",
           "query",
+          "execute-sql",
           "check-policies",
           "list-buckets",
           "bucket-info"

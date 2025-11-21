@@ -3,6 +3,8 @@
 ## Purpose
 Manages Perdia Education platform infrastructure via MCP servers (Supabase, Netlify, Cloudinary, DataForSEO, Playwright). Handles database operations, deployments, image optimization, SEO research, and testing.
 
+**Cross-Platform Compatible:** Works with both Cursor (Claude Code) and Antigravity MCP configurations.
+
 ## Activation Triggers
 
 ### Automatic Activation
@@ -54,19 +56,19 @@ Users can explicitly invoke this agent with:
 
 **Common Tasks:**
 ```javascript
-// List all tables
-mcp__supabase__list_resources()
+// Note: MCP tools are prefixed with mcp0_, mcp1_, etc. (Antigravity) or mcp__servername__ (Cursor)
+// Check your platform for exact tool names
 
-// Get table schema
-mcp__supabase__read_resource({ uri: "supabase://table/keywords" })
+// List all tables (Supabase MCP)
+mcp0_list_tables({ project_id: "yvvtsfgryweqfppilkvo" })  // Antigravity
+mcp__supabase__list_resources()  // Cursor
 
 // Execute query
-mcp__supabase__run_sql({
-  sql: "SELECT COUNT(*) FROM content_queue WHERE status = 'pending_review'"
-})
-
-// Check storage buckets
-mcp__supabase__read_resource({ uri: "supabase://storage-buckets" })
+mcp0_execute_sql({
+  project_id: "yvvtsfgryweqfppilkvo",
+  query: "SELECT COUNT(*) FROM content_queue WHERE status = 'pending_review'"
+})  // Antigravity
+mcp__supabase__run_sql({ sql: "SELECT COUNT(*)..." })  // Cursor
 ```
 
 ### 2. Netlify Deployment Management
@@ -258,13 +260,14 @@ if (deploys[0].state === "building") {
 }
 ```
 
-### 3. Use Project-Level MCP Server Names
+### 3. Use MCP Server Names (Cross-Platform Compatible)
 ```javascript
-// ✅ DO: Use project-level naming
-mcp__netlify__get_site()  // Uses "netlify" server from .claude/mcp.json
+// ✅ DO: Use MCP server naming (works in both Cursor and Antigravity)
+mcp0_get_site()  // Uses Supabase MCP from project config
+mcp__netlify__get_site()  // Uses "netlify" server from .claude/mcp.json or .gemini/antigravity/mcp_config.json
 
-// ❌ DON'T: Use global naming
-mcp__netlify-primary__get_site()  // Wrong - this is global config
+// Note: MCP tools may be prefixed with mcp0_, mcp1_, etc. depending on server order
+// Always use the tool names as they appear in your AI platform
 ```
 
 ### 4. Monitor Costs
@@ -385,9 +388,13 @@ mcp__cloudinary__ping()
 
 ## Documentation
 
-**MCP Configuration:**
-- Global: `C:\Users\Disruptors\.cursor\mcp.json`
-- Project: `.claude/mcp.json`
+**MCP Configuration (Cross-Platform):**
+- **Cursor**: 
+  - Global: `C:\Users\Disruptors\.cursor\mcp.json`
+  - Project: `.claude/mcp.json`
+- **Antigravity**:
+  - Global: `C:\Users\Disruptors\.gemini\antigravity\mcp_config.json`
+  - Project: `.claude/mcp.json` (if supported)
 
 **Related Docs:**
 - `CLAUDE.md` - MCP Server Configuration section

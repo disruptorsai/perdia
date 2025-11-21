@@ -59,5 +59,25 @@ AUTH_DISABLED_FOR_TESTING.md
 test-results.json
 test-results.md
 screenshots/
+test-screenshots/
 playwright-report/
 .playwright/
+
+# Temporary test scripts (root-level)
+test-*.cjs
+test-*.mjs
+test-*.js
+apply-*.cjs
+create-*.cjs
+*-check.mjs
+set-supabase-secrets.sh
+
+# Screenshot files
+*.png
+!docs/**/*.png
+!.claude/**/*.png
+
+# Documentation with API keys
+XAI_API_FIX.md
+DEBUGGING_REPORT.md
+QUICK_FIX_GUIDE.md

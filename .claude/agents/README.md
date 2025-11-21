@@ -1,122 +1,149 @@
----
-name: agents-directory-info
-description: Documentation for the .claude/agents directory structure
----
+# Perdia Subagent System - Cross-Platform MCP Support
 
-# Perdia Project Agents
+This directory contains subagent definitions for the Perdia Education platform that work with both **Cursor (Claude Code)** and **Antigravity** AI platforms.
 
-This directory contains project-specific agent configurations for Claude Code to use when working on the Perdia Education platform.
+## Platform Compatibility
 
-## Available Agents
+### Cursor (Claude Code)
+- **MCP Config Location**: `.claude/mcp.json` (project-level) or `C:\Users\Disruptors\.cursor\mcp.json` (global)
+- **Tool Naming**: `mcp__servername__toolname`
+- **Example**: `mcp__supabase__list_resources()`, `mcp__netlify__get_site()`
 
-### Perdia Supabase Database Agent
+### Antigravity
+- **MCP Config Location**: `C:\Users\Disruptors\.gemini\antigravity\mcp_config.json` (global)
+- **Tool Naming**: `mcp0_`, `mcp1_`, `mcp2_`, etc. based on server order
+- **Example**: `mcp0_list_tables({ project_id: "..." })`, `mcp0_execute_sql({ project_id: "...", query: "..." })`
 
-**File:** `perdia-supabase-database-agent.md`
-**Status:** Active
-**Auto-Invoke:** Yes
+## Available Subagents
 
-**Purpose:**
-Comprehensive database management agent that handles all Supabase-related operations for the Perdia Education platform.
+### 1. Perdia Infrastructure Agent
+**File**: `perdia-infrastructure-agent.md`
+**Purpose**: Manages infrastructure via MCP servers (Supabase, Netlify, Cloudinary, DataForSEO, Playwright)
 
-**Automatically Triggers When:**
-- Database keywords detected (database, supabase, postgres, sql, table, schema, etc.)
-- Storage keywords detected (bucket, upload, file, storage)
-- Auth keywords detected (authentication, user, session, rls, policy)
-- Performance keywords detected (slow, optimize, index, performance)
-- Error keywords detected (permission denied, 403, query failed, etc.)
+**Key Features**:
+- Database operations and schema management
+- Deployment and build monitoring
+- Image optimization via Cloudinary
+- SEO research via DataForSEO
+- Browser testing via Playwright
 
-**Capabilities:**
-- Schema management (create/modify tables)
-- RLS policy management
-- Migration file creation
-- SDK integration
-- Performance optimization
-- Storage bucket management
-- Documentation maintenance
-- Proactive suggestions
+**Auto-Activation Triggers**:
+- Database operations keywords
+- Deployment operations
+- Image optimization requests
+- SEO research
+- Testing and debugging
 
-**Project-Specific Knowledge:**
-- Complete Perdia schema (16 tables)
-- 4 storage buckets configuration
-- Base44-compatible SDK architecture
-- Centralized Supabase client pattern
-- All RLS policies
-- Migration patterns
+### 2. Perdia Deployment Validator
+**File**: `perdia-deployment-validator.md`
+**Purpose**: Validates deployments, handles deployment issues, diagnoses Supabase/AI integration problems
 
-**MCP Integration:**
-Automatically uses Supabase MCP server for:
-- Schema inspection
-- Query testing
-- Policy verification
-- Performance analysis
+**Key Features**:
+- Netlify deployment management
+- Closed-loop deployment cycle
+- Comprehensive testing and validation
+- Error recovery and diagnosis
+- Performance monitoring
 
-**Quick Reference:** `docs/SUPABASE_AGENT_QUICK_REFERENCE.md`
+**Auto-Activation Triggers**:
+- Deployment configuration changes
+- Git events (push to main, PR merges)
+- Deployment keywords
+- Health check failures
+- Supabase/AI integration errors
 
-## Agent Structure
+### 3. Perdia Infrastructure Manager
+**File**: `perdia-infrastructure-manager.md`
+**Purpose**: Elite DevOps specialist managing complete infrastructure stack
 
-### Configuration File
-`config.json` - Defines agent triggers, capabilities, and integration points
+**Key Features**:
+- Database management (Supabase MCP)
+- Deployment management (Netlify MCP)
+- Image optimization (Cloudinary MCP)
+- SEO research (DataForSEO MCP)
+- Testing and debugging (Playwright MCP)
 
-### Agent Documentation
-Each agent has a comprehensive markdown file with:
-- Agent identity and purpose
-- Automatic trigger conditions
-- Project-specific knowledge
-- Detailed capabilities
-- Standard patterns and templates
-- Example interactions
-- Integration with project workflow
+**Auto-Activation Triggers**:
+- Database operations
+- Deployment operations
+- Image optimization
+- SEO research
+- Testing and debugging
+- Proactive infrastructure monitoring
 
-## Using Agents
+## MCP Server Configuration
 
-### Automatic Activation
-Agents automatically activate when their trigger keywords are detected in your messages or code context.
+### Required MCP Servers
 
-### Manual Invocation
-You can explicitly request an agent:
-```
-"Use the Perdia Supabase Database Agent to add a new table for X"
-```
+All agents require the following MCP servers configured:
 
-### Agent Suggestions
-Agents will proactively suggest optimizations and improvements when they detect opportunities.
+1. **Supabase** (`@supabase/mcp-server-supabase`)
+   - Project Ref: `yvvtsfgryweqfppilkvo`
+   - Requires: `SUPABASE_ACCESS_TOKEN`
 
-## Adding New Agents
+2. **Netlify** (`@netlify/mcp@latest`)
+   - Site ID: `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
+   - Requires: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`
 
-To add a new project-specific agent:
+3. **Cloudinary** (`@felores/cloudinary-mcp-server@latest`)
+   - Cloud Name: `dvcvxhzmt`
+   - Requires: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
 
-1. Create agent documentation: `.claude/agents/{agent-name}.md`
-2. Update `config.json` with agent configuration
-3. Add quick reference to `docs/` if needed
-4. Update this README
-5. Update `CLAUDE.md` to reference the new agent
+4. **DataForSEO** (`dataforseo-mcp-server`)
+   - Requires: `DATAFORSEO_USERNAME`, `DATAFORSEO_PASSWORD`
 
-## Project Patterns
+5. **Playwright** (`@executeautomation/playwright-mcp-server`)
+   - Headless: `false`
 
-All agents should:
-- Follow Perdia-specific architecture patterns
-- Reference actual table/file names from the project
-- Use the centralized Supabase client
-- Maintain Base44 SDK compatibility
-- Keep documentation updated
-- Use Supabase MCP server when applicable
+### Configuration Example
 
-## Documentation Updates
+See `.claude/mcp.json.example` for the complete configuration format.
 
-When schema or architecture changes:
-1. Agent updates its own documentation
-2. Agent updates `CLAUDE.md` with changes
-3. Agent updates `ARCHITECTURE_GUIDE.md` if patterns change
-4. Agent creates migration files
-5. Agent updates SDK exports
+## Usage Guidelines
 
-## Related Documentation
+### For Agent Developers
 
-- **Main Guide:** `CLAUDE.md`
-- **Architecture:** `ARCHITECTURE_GUIDE.md`
-- **Setup:** `README.md`
-- **Migration:** `docs/PERDIA_MIGRATION_COMPLETE.md`
+When writing subagent instructions:
 
----
+1. **Platform Agnostic**: Write instructions that work on both platforms
+2. **Show Both Examples**: Include code examples for both Cursor and Antigravity
+3. **Document Project IDs**: Always include the Supabase project ref and Netlify site ID
+4. **Error Handling**: Document platform-specific error handling approaches
 
-**Note:** These agents are project-specific and tailored to the Perdia Education platform. They have deep knowledge of the project's schema, patterns, and architectural decisions.
+### For AI Assistants Using These Agents
+
+1. **Check Your Platform**: Determine if you're running on Cursor or Antigravity
+2. **Use Correct Tool Names**: Use `mcp__name__` for Cursor or `mcp0_` for Antigravity
+3. **Include Project IDs**: For Antigravity, always pass `project_id: "yvvtsfgryweqfppilkvo"`
+4. **Follow Examples**: Use the code examples provided in each agent file
+
+## Project Context
+
+**Project**: Perdia Education Platform
+**Tech Stack**: React + Vite + Supabase + Netlify
+**Database**: PostgreSQL (Supabase) - 16 tables, 4 storage buckets
+**Deployment**: Netlify (frontend) + Supabase Edge Functions
+**Supabase Project Ref**: `yvvtsfgryweqfppilkvo`
+**Netlify Site ID**: `371d61d6-ad3d-4c13-8455-52ca33d1c0d4`
+
+## Best Practices
+
+1. **Always Verify Current State**: Use MCP tools to check current infrastructure state before making changes
+2. **Use Project-Level Configs**: Keep project-specific MCP configurations in `.claude/mcp.json`
+3. **Never Expose Credentials**: Don't commit MCP credentials to version control
+4. **Monitor Costs**: Track usage across all MCP services
+5. **Security First**: Verify authentication before database operations
+
+## Additional Resources
+
+- **Main Documentation**: `CLAUDE.md` - MCP Server Configuration section
+- **Supabase Agent**: `docs/SUPABASE_AGENT_QUICK_REFERENCE.md`
+- **Architecture**: `ARCHITECTURE_GUIDE.md`
+
+## Support
+
+For issues or questions about the subagent system:
+1. Check the individual agent files for detailed instructions
+2. Review the MCP server documentation
+3. Verify your MCP configuration is correct
+4. Ensure all required environment variables are set
