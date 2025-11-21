@@ -24,6 +24,19 @@ export default function QualityChecklist({ article, content, onQualityChange }) 
     const hasH2Tags = /<h2/i.test(content);
     const faqs = article?.faqs || [];
 
+    // Check H2 ID attributes
+    const h2Matches = content.match(/<h2[^>]*>/gi) || [];
+    const h2WithIds = h2Matches.filter(tag => /id\s*=\s*["'][^"']+["']/i.test(tag));
+    const h2IdCoverage = h2Matches.length > 0 ? h2WithIds.length / h2Matches.length : 0;
+    const allH2sHaveIds = h2Matches.length > 0 && h2IdCoverage === 1;
+
+    // Check H3 count
+    const h3Count = (content.match(/<h3/gi) || []).length;
+
+    // Check images
+    const imageCount = (content.match(/<img/gi) || []).length;
+    const hasFeaturedImage = !!article?.featured_image_url;
+
     const newChecks = {
       wordCount: {
         label: 'Word Count (800+ words)',
@@ -51,6 +64,26 @@ export default function QualityChecklist({ article, content, onQualityChange }) 
         pass: hasH2Tags,
         current: hasH2Tags ? 'Present' : 'Missing',
         critical: true
+      },
+      h2Ids: {
+        label: 'H2 Navigation IDs (all H2s need id attributes)',
+        pass: allH2sHaveIds,
+        current: `${h2WithIds.length}/${h2Matches.length}`,
+        target: h2Matches.length,
+        critical: true
+      },
+      headingDepth: {
+        label: 'Heading Depth (H2 and H3 tags)',
+        pass: h3Count >= 2,
+        current: `${h2Matches.length} H2, ${h3Count} H3`,
+        target: '2+ H3',
+        critical: false
+      },
+      images: {
+        label: 'Images (featured image)',
+        pass: hasFeaturedImage,
+        current: hasFeaturedImage ? 'Yes' : 'No',
+        critical: false
       },
       faqs: {
         label: 'FAQ Schema (3+ questions)',

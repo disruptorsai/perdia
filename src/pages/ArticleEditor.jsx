@@ -141,6 +141,52 @@ export default function ArticleEditor() {
     }
   };
 
+  // Helper function to generate H2 IDs
+  const addH2Ids = (content) => {
+    const usedIds = new Set();
+    return content.replace(/<h2([^>]*)>(.*?)<\/h2>/gi, (match, attributes, headingText) => {
+      if (/id\s*=\s*["'][^"']+["']/i.test(attributes)) {
+        return match;
+      }
+      let baseId = headingText.toLowerCase().replace(/<[^>]*>/g, '').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').substring(0, 50);
+      let id = baseId;
+      let counter = 1;
+      while (usedIds.has(id)) {
+        id = `${baseId}-${counter}`;
+        counter++;
+      }
+      usedIds.add(id);
+      const newAttributes = attributes.trim() ? `${attributes} id="${id}"` : `id="${id}"`;
+      return `<h2 ${newAttributes}>${headingText}</h2>`;
+    });
+  };
+
+  // Helper function to calculate quality metrics
+  const calculateQualityMetrics = (content, faqs) => {
+    const wordCount = content.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w).length;
+    const internalLinks = (content.match(/geteducated\.com/gi) || []).length;
+    const externalLinks = (content.match(/<a href="http/gi) || []).length - internalLinks;
+    const h2Matches = content.match(/<h2[^>]*>/gi) || [];
+    const h2WithIds = h2Matches.filter(tag => /id\s*=\s*["'][^"']+["']/i.test(tag));
+    const hasFAQs = faqs && faqs.length >= 3;
+
+    return {
+      wordCount,
+      internalLinks,
+      externalLinks,
+      h2Count: h2Matches.length,
+      h2WithIds: h2WithIds.length,
+      hasFAQs,
+      issues: [
+        wordCount < 800 && 'content_length',
+        internalLinks < 2 && 'internal_links',
+        externalLinks < 1 && 'external_links',
+        h2WithIds.length < h2Matches.length && 'h2_ids',
+        !hasFAQs && 'faqs'
+      ].filter(Boolean)
+    };
+  };
+
   const handleAutoFix = async () => {
     setIsAutoFixing(true);
     setAutoFixSteps([]);
@@ -158,26 +204,19 @@ export default function ArticleEditor() {
       addStep('🔍 Analyzing article quality...');
       await delay(600);
 
-      // Check what needs fixing
-      const internalLinks = (formData.content.match(/geteducated\.com/gi) || []).length;
-      const externalLinks = (formData.content.match(/<a href="http/gi) || []).length - internalLinks;
-      const hasFAQs = formData.faqs && formData.faqs.length >= 3;
-      const wordCount = formData.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w).length;
+      // Initial quality check
+      const initialMetrics = calculateQualityMetrics(formData.content, formData.faqs);
 
-      const issues = [];
-      if (internalLinks < 2) issues.push('internal_links');
-      if (externalLinks < 1) issues.push('external_links');
-      if (!hasFAQs) issues.push('faqs');
-      if (wordCount < 800) issues.push('content_length');
+      addStep(`📊 Current: ${initialMetrics.wordCount} words, ${initialMetrics.internalLinks} internal links, ${initialMetrics.externalLinks} external links`);
 
-      if (issues.length === 0) {
+      if (initialMetrics.issues.length === 0) {
         addStep('✓ Article already meets all quality standards!');
         await delay(1000);
         setIsAutoFixing(false);
         return;
       }
 
-      addStep(`📋 Found ${issues.length} issue(s) to fix`);
+      addStep(`📋 Found ${initialMetrics.issues.length} issue(s): ${initialMetrics.issues.join(', ')}`);
       await delay(400);
 
       const linkingContext = verifiedSiteArticles.slice(0, 20).map(a => ({
@@ -187,124 +226,203 @@ export default function ArticleEditor() {
         topics: a.topics?.join(', ') || ''
       }));
 
-      addStep('🤖 Building improvement prompt for AI...');
-      await delay(600);
-
       const currentYear = new Date().getFullYear();
       const modelSetting = settings.find(s => s.setting_key === 'default_model');
       const aiModel = modelSetting?.setting_value || 'grok-beta';
 
-      const wordsToAdd = Math.max(850 - wordCount, 0);
-      const linksToAdd = Math.max(2 - internalLinks, 0);
-      const externalLinksToAdd = Math.max(1 - externalLinks, 0);
+      let currentContent = formData.content;
+      let currentFaqs = formData.faqs || [];
+      let attempt = 0;
+      const maxAttempts = 2;
 
-      const prompt = `You are improving an article for GetEducated.com in ONE comprehensive pass.
+      // Retry loop
+      while (attempt < maxAttempts) {
+        attempt++;
+        const metrics = calculateQualityMetrics(currentContent, currentFaqs);
+
+        if (metrics.issues.length === 0) {
+          addStep('✓ All issues resolved!');
+          break;
+        }
+
+        addStep(`🔄 Attempt ${attempt}/${maxAttempts}: Fixing ${metrics.issues.length} remaining issue(s)`);
+        await delay(400);
+
+        const wordsToAdd = Math.max(850 - metrics.wordCount, 0);
+        const linksToAdd = Math.max(2 - metrics.internalLinks, 0);
+        const externalLinksToAdd = Math.max(1 - metrics.externalLinks, 0);
+
+        const prompt = `You are improving an article for GetEducated.com.
 
 CURRENT ARTICLE TITLE: ${formData.title}
-CURRENT WORD COUNT: ${wordCount} words
-CURRENT INTERNAL LINKS: ${internalLinks}
-CURRENT EXTERNAL LINKS: ${externalLinks}
+CURRENT WORD COUNT: ${metrics.wordCount} words (TARGET: 850+)
+CURRENT INTERNAL LINKS: ${metrics.internalLinks} (TARGET: 2+)
+CURRENT EXTERNAL LINKS: ${metrics.externalLinks} (TARGET: 1+)
 
-YOUR TASK - FIX ALL ISSUES IN ONE GO:
-${issues.includes('content_length') ? `1. EXPAND to 850+ words (add ${wordsToAdd}+ words)\n` : ''}
-${issues.includes('internal_links') ? `2. ADD ${linksToAdd} internal GetEducated.com link(s)\n` : ''}
-${issues.includes('external_links') ? `3. ADD ${externalLinksToAdd} authoritative external citation(s)\n` : ''}
+YOUR TASK - FIX ALL ISSUES:
+${metrics.issues.includes('content_length') ? `1. EXPAND to 850+ words by adding ${wordsToAdd}+ words\n   - Add new substantial sections like "Why This Matters in ${currentYear}", "Expert Tips", "Common Mistakes"\n   - Expand existing sections with more details, examples, and context\n` : ''}
+${metrics.issues.includes('internal_links') ? `2. ADD ${linksToAdd} internal GetEducated.com link(s)\n   - AVAILABLE LINKS:\n${linkingContext.slice(0, 10).map((a, i) => `     ${i + 1}. ${a.url} - ${a.title}`).join('\n')}\n   - Use ONLY URLs from above, format: <a href="URL">anchor text</a>\n` : ''}
+${metrics.issues.includes('external_links') ? `3. ADD ${externalLinksToAdd} authoritative external citation(s)\n   - Find ${currentYear} data from BLS.gov, NCES.ed.gov, .gov, .edu domains\n   - Format: <a href="URL" target="_blank" rel="noopener">Source Name (${currentYear})</a>\n` : ''}
 
 EXISTING ARTICLE CONTENT:
-${formData.content}
+${currentContent}
 
-${issues.includes('internal_links') ? `
-INTERNAL LINKS - ADD ${linksToAdd}:
-${linkingContext.slice(0, 10).map((a, i) => `${i + 1}. ${a.url} - ${a.title}`).join('\n')}
+${attempt > 1 ? '\n⚠️ CRITICAL: Previous attempt failed to meet all requirements. Be MORE AGGRESSIVE with additions.\n' : ''}
 
-Use ONLY URLs from above. Format: <a href="URL">anchor text</a>
-` : ''}
+STRICT OUTPUT REQUIREMENT: Return ONLY the complete HTML article content. NO explanations, NO meta-commentary.`;
 
-${issues.includes('external_links') ? `
-EXTERNAL CITATIONS - ADD ${externalLinksToAdd}:
-Find ${currentYear} data from BLS.gov, NCES.ed.gov, .gov, .edu, professional .org
-Format: <a href="URL" target="_blank" rel="noopener">Source (${currentYear})</a>
-` : ''}
-
-CRITICAL: Return ONLY the complete HTML. No explanations.`;
-
-      addStep('✨ AI is improving your article...');
-      await delay(800);
-
-      const improvedContent = await InvokeLLM({
-        prompt,
-        provider: 'xai',
-        model: aiModel,
-        temperature: 0.7,
-        max_tokens: 8000
-      });
-
-      let cleanedContent = improvedContent
-        .replace(/^```html\s*/gi, '')
-        .replace(/^```\s*/gi, '')
-        .replace(/\s*```$/gi, '')
-        .replace(/^Here'?s? (?:a|the).*?:?\s*/gi, '')
-        .replace(/^I'?ve.*?\.\s*/gi, '')
-        .trim();
-
-      addStep('✓ Content improved successfully!');
-      await delay(400);
-
-      // Generate FAQs if needed
-      let faqs = formData.faqs || [];
-      if (issues.includes('faqs')) {
-        addStep('❓ Generating FAQ schema...');
+        addStep('✨ AI is improving content...');
         await delay(800);
 
-        const faqPrompt = `Generate 5-7 relevant FAQs for: "${formData.title}". Return ONLY JSON:
+        const improvedContent = await InvokeLLM({
+          prompt,
+          provider: 'xai',
+          model: aiModel,
+          temperature: 0.7,
+          max_tokens: 8000
+        });
+
+        currentContent = improvedContent
+          .replace(/^```html\s*/gi, '')
+          .replace(/^```\s*/gi, '')
+          .replace(/\s*```$/gi, '')
+          .replace(/^Here'?s? (?:a|the).*?version.*?:?\s*/gi, '')
+          .replace(/^I'?ve.*?\.\s*/gi, '')
+          .replace(/^Below is.*?:?\s*/gi, '')
+          .trim();
+
+        addStep('✓ Content improved');
+
+        // Generate FAQs if needed (only on first attempt)
+        if (attempt === 1 && metrics.issues.includes('faqs')) {
+          addStep('❓ Generating FAQ schema...');
+          await delay(800);
+
+          const faqPrompt = `Generate 5-7 relevant, specific FAQs for this article: "${formData.title}".
+
+Return ONLY this JSON structure:
 {
   "faqs": [
-    {"question": "Q?", "answer": "A"}
+    {"question": "Specific question?", "answer": "Detailed answer with facts"}
   ]
 }`;
 
-        const faqResult = await InvokeLLM({
-          prompt: faqPrompt,
-          provider: 'claude',
-          model: 'claude-haiku-4-5-20251001',
-          temperature: 0.7,
-          max_tokens: 2000,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              faqs: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    question: { type: "string" },
-                    answer: { type: "string" }
+          const faqResult = await InvokeLLM({
+            prompt: faqPrompt,
+            provider: 'claude',
+            model: 'claude-haiku-4-5-20251001',
+            temperature: 0.7,
+            max_tokens: 2000,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                faqs: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      question: { type: "string" },
+                      answer: { type: "string" }
+                    }
                   }
                 }
               }
             }
-          }
-        });
+          });
 
-        faqs = faqResult.faqs || [];
-        addStep(`✓ Added ${faqs.length} FAQs`);
+          currentFaqs = faqResult.faqs || [];
+          addStep(`✓ Added ${currentFaqs.length} FAQs`);
+        }
+
+        // Re-validate
+        const newMetrics = calculateQualityMetrics(currentContent, currentFaqs);
+        addStep(`📊 After fix: ${newMetrics.wordCount} words, ${newMetrics.internalLinks} internal, ${newMetrics.externalLinks} external`);
+
+        if (newMetrics.issues.length === 0) {
+          addStep('✓ All requirements met!');
+          break;
+        } else if (attempt < maxAttempts) {
+          addStep(`⚠️ ${newMetrics.issues.length} issue(s) remain, retrying...`);
+          await delay(600);
+        }
       }
 
-      addStep('💾 Updating article...');
+      // Add H2 IDs
+      addStep('🔗 Adding navigation IDs to H2 headings...');
+      await delay(400);
+      currentContent = addH2Ids(currentContent);
+      addStep('✓ H2 IDs added');
+
+      // Final humanization
+      addStep('🎨 Applying final humanization pass...');
+      await delay(600);
+
+      const humanizationPrompt = `Humanize this educational article to sound naturally written by an experienced journalist.
+
+ARTICLE:
+${currentContent}
+
+HUMANIZATION RULES:
+1. SENTENCE VARIETY: Mix short punchy sentences (5-8 words) with longer complex ones (20-30 words)
+2. CONVERSATIONAL TONE: Add contractions ("don't", "won't"), rhetorical questions, direct address ("you")
+3. NATURAL IMPERFECTIONS: Start some sentences with "And" or "But", use em dashes for emphasis
+4. REMOVE AI PATTERNS: Eliminate "Furthermore", "Moreover", "In conclusion", "It's worth noting"
+5. ADD PERSONALITY: Use specific examples, industry analogies, occasional professional opinions
+6. MAINTAIN QUALITY: Keep ALL H2/H3 headings unchanged, preserve ALL links and citations exactly, maintain professionalism
+
+CRITICAL: Return ONLY the humanized HTML content. No explanations.`;
+
+      const humanizedContent = await InvokeLLM({
+        prompt: humanizationPrompt,
+        provider: 'xai',
+        model: aiModel,
+        temperature: 0.8,
+        max_tokens: 8000
+      });
+
+      currentContent = humanizedContent
+        .replace(/^```html\s*/gi, '')
+        .replace(/^```\s*/gi, '')
+        .replace(/\s*```$/gi, '')
+        .replace(/^Here'?s?.*?:?\s*/gi, '')
+        .replace(/^I'?ve.*?\.\s*/gi, '')
+        .trim();
+
+      addStep('✓ Content humanized');
+      await delay(400);
+
+      // Final validation
+      const finalMetrics = calculateQualityMetrics(currentContent, currentFaqs);
+      addStep('');
+      addStep('📊 FINAL RESULTS:');
+      addStep(`   Word Count: ${initialMetrics.wordCount} → ${finalMetrics.wordCount} (${finalMetrics.wordCount >= 800 ? '✓' : '✗'})`);
+      addStep(`   Internal Links: ${initialMetrics.internalLinks} → ${finalMetrics.internalLinks} (${finalMetrics.internalLinks >= 2 ? '✓' : '✗'})`);
+      addStep(`   External Links: ${initialMetrics.externalLinks} → ${finalMetrics.externalLinks} (${finalMetrics.externalLinks >= 1 ? '✓' : '✗'})`);
+      addStep(`   H2 IDs: ${initialMetrics.h2WithIds}/${initialMetrics.h2Count} → ${finalMetrics.h2WithIds}/${finalMetrics.h2Count} (${finalMetrics.h2WithIds === finalMetrics.h2Count ? '✓' : '✗'})`);
+      addStep(`   FAQs: ${initialMetrics.hasFAQs ? 'Yes' : 'No'} → ${finalMetrics.hasFAQs ? 'Yes' : 'No'} (${finalMetrics.hasFAQs ? '✓' : '✗'})`);
+
+      if (finalMetrics.issues.length === 0) {
+        addStep('');
+        addStep('✅ Auto-fix complete - All quality standards met!');
+      } else {
+        addStep('');
+        addStep(`⚠️ Auto-fix complete - ${finalMetrics.issues.length} issue(s) still need manual attention: ${finalMetrics.issues.join(', ')}`);
+      }
+
       await delay(500);
 
       setFormData({
         ...formData,
-        content: cleanedContent,
-        faqs
+        content: currentContent,
+        faqs: currentFaqs
       });
 
-      addStep('✓ Auto-fix complete!');
       setIsAutoFixing(false);
 
     } catch (error) {
       console.error('Auto-fix error:', error);
       addStep(`✗ Error: ${error.message}`);
+      addStep('Please try again or fix manually.');
       setIsAutoFixing(false);
     }
   };

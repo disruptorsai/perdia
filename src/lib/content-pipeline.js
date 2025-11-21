@@ -300,6 +300,50 @@ Return as JSON:
 }
 
 /**
+ * Helper: Generate slug from text
+ */
+function generateSlug(text) {
+  return text
+    .toLowerCase()
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+    .substring(0, 50); // Limit length
+}
+
+/**
+ * Helper: Auto-generate ID attributes for H2 headings
+ */
+function addH2Ids(content) {
+  const usedIds = new Set();
+
+  return content.replace(/<h2([^>]*)>(.*?)<\/h2>/gi, (match, attributes, headingText) => {
+    // Check if ID already exists
+    if (/id\s*=\s*["'][^"']+["']/i.test(attributes)) {
+      return match; // Keep existing ID
+    }
+
+    // Generate unique ID
+    let baseId = generateSlug(headingText);
+    let id = baseId;
+    let counter = 1;
+
+    while (usedIds.has(id)) {
+      id = `${baseId}-${counter}`;
+      counter++;
+    }
+
+    usedIds.add(id);
+
+    // Add ID attribute
+    const newAttributes = attributes.trim() ? `${attributes} id="${id}"` : `id="${id}"`;
+    return `<h2 ${newAttributes}>${headingText}</h2>`;
+  });
+}
+
+/**
  * Stage 5: Validate article quality
  */
 function validateArticle(content, wordCount, citationCount) {
@@ -326,6 +370,13 @@ function validateArticle(content, wordCount, citationCount) {
   const unverifiedClaims = (content.match(/\[UNVERIFIED/g) || []).length;
   if (unverifiedClaims > 0) {
     errors.push(`${unverifiedClaims} claims could not be verified and must be removed`);
+  }
+
+  // H2 ID validation
+  const h2Matches = content.match(/<h2[^>]*>/gi) || [];
+  const h2WithIds = h2Matches.filter(tag => /id\s*=\s*["'][^"']+["']/i.test(tag));
+  if (h2WithIds.length < h2Matches.length) {
+    errors.push(`${h2Matches.length - h2WithIds.length} H2 headings missing ID attributes`);
   }
 
   return {
@@ -401,16 +452,20 @@ export async function generateArticlePipeline(topicQuestion, options = {}) {
       imageCost = imageResult.imageCost;
     }
 
-    // Stage 4: Transform shortcodes
+    // Stage 4: Add H2 IDs for navigation
+    onProgress?.({ stage: 'h2-ids', message: 'Adding navigation IDs to H2 headings...', timestamp: Date.now() });
+    const contentWithIds = addH2Ids(finalContent);
+
+    // Stage 5: Transform shortcodes
     onProgress?.({ stage: 'shortcodes', message: 'Transforming links to GetEducated shortcodes...', timestamp: Date.now() });
-    const shortcodeResult = prePublishTransform(finalContent);
+    const shortcodeResult = prePublishTransform(contentWithIds);
     const publishableContent = shortcodeResult.content;
     const shortcodeStats = shortcodeResult.stats;
 
-    // Stage 5: Extract SEO metadata
+    // Stage 6: Extract SEO metadata
     const seoMetadata = await extractSEOMetadata(title, publishableContent, topicQuestion, onProgress);
 
-    // Stage 6: Validate
+    // Stage 7: Validate
     onProgress?.({ stage: 'validate', message: 'Running quality checks...', timestamp: Date.now() });
     const validation = validateArticle(publishableContent, wordCount, citationCount);
 
